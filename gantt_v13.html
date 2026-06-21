@@ -348,6 +348,8 @@ select.tbtn{padding:4px 8px;width:auto;}
 /* 非gcセルのlv1制御 */
 .gantt-table tr.lv1-inner td:not(.gc){ border-bottom:0 hidden !important; }
 .gantt-table tr.lv1-notop td:not(.gc){ border-top:0 none !important; }
+/* グループ先頭行（lv1-inner・lv1-notopでない行）の非gcセルの上辺を消す（前グループ末尾の下辺との二重線防止） */
+.gantt-table tr:not(.lv1-inner):not(.lv1-notop):not(:first-child) td:not(.gc){ border-top:none !important; }
 .gantt-table tr.lv1-end td:not(.gc){ border-bottom:1px solid var(--border) !important; }
 .gantt-table tr.tbl-last td:not(.gc){ border-bottom:1px solid var(--border) !important; }
 #pv-zoom-sel option{color:#222;background:#fff;}
@@ -1090,7 +1092,7 @@ function makeBarEntry(rowId,idx,d){
   entry.className='bar-entry';entry.dataset.idx=idx;
   entry.dataset.color=d.color||'blue';entry.dataset.shape=d.shape||'roundRect';
   entry.dataset.width=d.width||'mid';entry.dataset.customHex=d.customHex||'';
-  entry.innerHTML=`<input type="date" class="b-start" value="${d.start||''}"><span class="date-sep">〜</span><input type="date" class="b-end" value="${d.end||''}"><div class="bprev" onclick="openPanel(${rowId},${idx},this)" title="変更"></div><button class="bar-del" onclick="this.closest('.bar-entry').remove()" title="削除">🗑</button>`;
+  entry.innerHTML=`<input type="date" class="b-start" value="${d.start||''}"><span class="date-sep">〜</span><input type="date" class="b-end" value="${d.end||''}"><div class="bprev" onclick="openPanel(${rowId},${idx},this)" title="変更"></div><button class="bar-del" onclick="delBarEntry(this,${rowId})" title="削除">🗑</button>`;
   refreshBarPrev(entry);
   return entry;
 }
@@ -1123,8 +1125,25 @@ function addRow(type,level,d){
     ?[{start:d.start||'',end:d.start||'',color:'gold',shape:'diamond',width:'mid'}]
     :[{start:d.start||'',end:d.end||'',color:d.color||(lv==='lv1'?'lblue':'blue'),shape:d.shape||(lv==='lv1'?'rect':lv==='lv2'?'arrow_md':'roundRect'),width:d.width||'mid'}]);
   initBars.forEach(b=>ba.appendChild(makeBarEntry(id,barCnt++,b)));
+  updateBarDelVisibility(id);
 }
-function addBarEntry(rowId){saveUndo();const ba=document.getElementById('bars-'+rowId);ba.appendChild(makeBarEntry(rowId,barCnt++,{}));}
+// バーが1本のみの行は削除(🗑)ボタンを隠す（最後の1本を消せないようにする）
+function updateBarDelVisibility(rowId){
+  const ba=document.getElementById('bars-'+rowId);
+  if(!ba)return;
+  const entries=ba.querySelectorAll('.bar-entry');
+  entries.forEach(function(e){
+    const del=e.querySelector('.bar-del');
+    if(del)del.style.display=entries.length>1?'':'none';
+  });
+}
+function delBarEntry(btn,rowId){
+  saveUndo();
+  const entry=btn.closest('.bar-entry');
+  if(entry)entry.remove();
+  updateBarDelVisibility(rowId);
+}
+function addBarEntry(rowId){saveUndo();const ba=document.getElementById('bars-'+rowId);ba.appendChild(makeBarEntry(rowId,barCnt++,{}));updateBarDelVisibility(rowId);}
 function delRow(id){saveUndo();document.getElementById('row-'+id)?.remove();}
 function moveUp(id){saveUndo();const t=document.getElementById('row-'+id);if(t?.previousElementSibling)t.parentNode.insertBefore(t,t.previousElementSibling);}
 function moveDown(id){saveUndo();const t=document.getElementById('row-'+id);if(t?.nextElementSibling)t.parentNode.insertBefore(t.nextElementSibling,t);}
