@@ -2087,7 +2087,10 @@ function buildTable(data){
         const isGroupEnd=lastRowOfLv1.has(dataEr);
         const isGroupStart=firstRowOfLv1.has(dataEr);
         if(!isGroupEnd)tr.classList.add('lv1-inner');
+        // グループ先頭行でも上辺を消す（前グループの下辺と重複するため）
+        // ただしspacer直後・テーブル最初の行は除く
         if(!isGroupStart||prevWasSpacer)tr.classList.add('lv1-notop');
+        else if(isGroupStart&&dataEr>0&&!prevWasSpacer)tr.classList.add('lv1-notop');
         if(isGroupEnd)tr.classList.add('lv1-end');
       }
       prevWasSpacer=false;
