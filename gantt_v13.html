@@ -1713,17 +1713,25 @@ function printPreview(){
     const BDR='1px solid #e8e8e8';
 
     tr.querySelectorAll('td.gc').forEach(function(td){
+      // まず全てリセット
+      td.style.borderTop='none';
+      td.style.borderBottom='none';
+
       if(isLast){
+        // 最下段: 下のみ
         td.style.borderBottom=BDR;
       }else if(inner&&notop){
-        // 横線なし
+        // 中間行: 上下なし
       }else if(inner){
+        // グループ内先頭以外・末尾以外: 上のみ
         td.style.borderTop=BDR;
       }else if(notop||isEnd){
+        // グループ末尾・先頭以外: 下のみ
         td.style.borderBottom=BDR;
       }else{
-        td.style.borderTop=BDR;
+        // グループ外・単独行: 下のみ（上は前行の下辺に任せる）
         td.style.borderBottom=BDR;
+        // ★ border-topは付けない（前行のborder-bottomと重複するため）
       }
     });
   });
