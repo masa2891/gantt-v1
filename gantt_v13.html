@@ -1,0 +1,2665 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>区画整理事業行程表入力ツール ver.1</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Meiryo","Yu Gothic",sans-serif;font-size:13px;background:#f2f5f9;color:#222;}
+header{background:#1f4e79;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;}
+header h1{font-size:16px;font-weight:bold;}
+header span{font-size:11px;opacity:.75;}
+.container{max-width:1400px;margin:0 auto;padding:12px;}
+.section{background:#fff;border-radius:6px;border:0.5px solid #dde;padding:12px 16px;margin-bottom:10px;}
+.sec-title{font-size:12px;font-weight:bold;color:#1f4e79;margin-bottom:8px;border-bottom:2px solid #bdd7ee;padding-bottom:3px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;}
+.full{grid-column:1/-1;}
+label{display:block;font-size:10px;color:#666;margin-bottom:2px;}
+input[type=text],input[type=date],select,textarea{width:100%;padding:5px 7px;border:1px solid #ccc;border-radius:4px;font-size:12px;font-family:inherit;background:#fff;color:#222;}
+input[type=date]{cursor:pointer;}
+textarea{resize:vertical;min-height:34px;}
+input:focus,select:focus,textarea:focus{outline:2px solid #4472c4;border-color:#4472c4;}
+.axis-info{font-size:11px;color:#1f4e79;margin-top:4px;}
+.task-wrap{overflow-x:auto;}
+table.tt{border-collapse:collapse;width:100%;font-size:11px;min-width:800px;}
+table.tt th{background:#1f4e79;color:#fff;border:1px solid #4472c4;padding:4px 5px;text-align:center;white-space:nowrap;font-size:10px;font-weight:bold;}
+table.tt td{border:1px solid #ccc;padding:2px 3px;vertical-align:middle;}
+table.tt tr:hover td{background:#f0f5ff;}
+table.tt tr.row-sp td{background:#f0f0f0;border-color:#ddd;}
+table.tt tr.row-ms td{background:#fff8e1;}
+/* #（行番号）列を左端に固定 */
+table.tt th:first-child,table.tt td:first-child{position:sticky;left:0;z-index:2;}
+table.tt td:first-child{background:#fff;}
+table.tt tr.row-sp td:first-child{background:#f0f0f0;}
+table.tt tr.row-ms td:first-child{background:#fff8e1;}
+td input[type=text],td input[type=date]{border:none;background:transparent;width:100%;padding:2px 3px;font-size:11px;}
+td input:focus{background:#fff;outline:1px solid #4472c4;border-radius:2px;}
+td select{border:none;background:transparent;width:100%;font-size:11px;padding:1px;}
+td textarea{border:none;background:transparent;width:100%;font-size:10px;padding:2px;min-height:24px;resize:none;}
+.td-num{text-align:center;color:#aaa;width:20px;font-size:9px;}
+.td-lv{width:40px;}
+.td-name{min-width:110px;}
+.td-sub{min-width:70px;}
+.td-bars{min-width:280px;padding:2px 4px !important;}
+.td-cp{width:24px;text-align:center;}
+.td-memo{min-width:70px;}
+.td-ops{width:52px;text-align:center;white-space:nowrap;}
+.bars-area{display:flex;flex-direction:column;gap:3px;}
+.bar-entry{display:flex;align-items:center;gap:4px;background:#f8f9fb;border-radius:4px;padding:3px 4px;flex-wrap:nowrap;}
+.bar-entry input[type=date]{width:108px;font-size:10px;padding:2px 3px;flex-shrink:0;}
+.date-sep{font-size:10px;color:#888;flex-shrink:0;}
+.bprev{display:inline-flex;align-items:center;justify-content:center;
+  width:92px;height:18px;border-radius:3px;cursor:pointer;
+  transition:box-shadow .15s;position:relative;overflow:visible;flex-shrink:0;}
+.bprev:hover{box-shadow:0 0 0 2px #4472c4;}
+.bprev.sh-round{border-radius:9px;}
+.bprev.sh-arrow{border-radius:2px 0 0 2px;width:74px;}
+.bprev.sh-arrow::after{content:'';position:absolute;right:-9px;top:50%;transform:translateY(-50%);
+  border-top:var(--aw,9px) solid transparent;border-bottom:var(--aw,9px) solid transparent;
+  border-left:calc(var(--aw,9px)*1.1) solid var(--pc);}
+.bprev.sh-dash{background:transparent!important;border:2px dashed var(--pc)!important;}
+.bprev.sh-solid-rect{background:transparent!important;border:2px solid var(--pc)!important;box-sizing:border-box;}
+.bprev.w-thin{height:10px;}.bprev.w-mid{height:18px;}.bprev.w-thick{height:26px;}
+.bprev.sh-ms{background:transparent!important;border:none!important;font-size:18px;width:28px;height:28px;}
+.bar-add{background:#4472c4;color:#fff;border:none;border-radius:3px;padding:2px 7px;font-size:10px;cursor:pointer;}
+.bar-add:hover{background:#2e5099;}
+.bar-del{background:none;border:none;color:#c00;cursor:pointer;font-size:15px;padding:0 2px;line-height:1;margin-left:auto;}
+#style-panel{display:none;position:fixed;z-index:9999;background:#fff;
+  border:1px solid #bbb;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.2);
+  width:360px;max-height:88vh;overflow-y:auto;}
+.panel-head{font-size:12px;font-weight:bold;color:#1f4e79;
+  padding:8px 12px;background:#eef3fb;border-radius:8px 8px 0 0;
+  display:flex;justify-content:space-between;align-items:center;cursor:move;user-select:none;}
+.panel-body{padding:10px 12px 12px;}
+#panel-close{background:none;border:none;cursor:pointer;font-size:16px;color:#888;}
+.tab-bar{display:flex;border-bottom:2px solid #dde;margin-bottom:8px;}
+.tab-btn{padding:5px 14px;border:none;background:transparent;font-size:11px;font-weight:bold;color:#888;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;}
+.tab-btn.on{color:#1f4e79;border-bottom-color:#1f4e79;}
+.tab-pane{display:none;}.tab-pane.on{display:block;}
+.pl{font-size:10px;color:#888;font-weight:bold;margin:8px 0 4px;}
+.cgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
+.chip-c{border-radius:5px;cursor:pointer;border:2px solid transparent;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:bold;height:28px;}
+.chip-c:hover,.chip-c.on{border-color:#111;box-shadow:0 0 0 2px #4472c4;}
+#custom-hex-row{display:none;margin-top:5px;}
+.sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+.chip-s{border:1.5px solid #ccc;border-radius:5px;padding:5px 3px;text-align:center;cursor:pointer;font-size:9px;background:#f5f7fa;}
+.chip-s:hover,.chip-s.on{border-color:#4472c4;background:#e8f0fb;}
+.wgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+.chip-w{border:1.5px solid #ccc;border-radius:5px;padding:6px 3px;text-align:center;cursor:pointer;font-size:10px;background:#f5f7fa;}
+.chip-w:hover,.chip-w.on{border-color:#4472c4;background:#e8f0fb;}
+#panel-apply{width:100%;padding:7px;background:#1f4e79;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:bold;margin-top:10px;}
+#panel-apply:hover{background:#2e75b6;}
+.btn{padding:6px 12px;border-radius:4px;border:none;font-size:12px;cursor:pointer;font-weight:bold;font-family:inherit;}
+.btn:hover{opacity:.85;}
+.btn-lv1{background:#1f4e79;color:#fff;}.btn-lv2{background:#2e75b6;color:#fff;}
+.btn-lv3{background:#4472c4;color:#fff;}.btn-ms{background:#b8860b;color:#fff;}
+.btn-sp{background:#888;color:#fff;}.btn-xl{background:#375623;color:#fff;font-size:13px;padding:8px 22px;}
+.btn-undo{background:#f0a500;color:#fff;}.btn-redo{background:#2e75b6;color:#fff;}
+.btn-clr{background:#c00;color:#fff;}.btn-smp{background:#555;color:#fff;}
+.btn-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px;}
+.btn-del{background:none;border:none;color:#c00;cursor:pointer;font-size:13px;padding:0 2px;}
+.btn-up,.btn-dn{background:none;border:none;color:#888;cursor:pointer;font-size:11px;padding:0 2px;}
+.cp-chk{accent-color:#c00;}
+.msg-ok{color:#375623;font-weight:bold;font-size:11px;margin:5px 0;}
+.msg-err{color:#c00;font-weight:bold;font-size:11px;margin:5px 0;}
+</style>
+</head>
+<body>
+<div id="style-panel">
+  <div class="panel-head" id="panel-head">色・形状・太さを選択
+    <button id="panel-close" onclick="closePanel()">×</button></div>
+  <div class="panel-body">
+    <div class="pl">色</div>
+    <div class="cgrid" id="color-grid"></div>
+    <div id="custom-hex-row">
+      <label>カスタムカラー (#RRGGBB)</label>
+      <input type="text" id="custom-hex-input" placeholder="#E26B00" maxlength="7">
+    </div>
+    <div class="pl">形状</div>
+    <div class="tab-bar">
+      <button class="tab-btn on" data-tab="tab-bar">バー用</button>
+      <button class="tab-btn" data-tab="tab-ms">MS・記号用</button>
+    </div>
+    <div id="tab-bar" class="tab-pane on"><div class="sgrid" id="shape-bar-grid"></div></div>
+    <div id="tab-ms" class="tab-pane"><div class="sgrid" id="shape-ms-grid"></div></div>
+    <div class="pl">太さ</div>
+    <div class="wgrid" id="width-grid"></div>
+    <button id="panel-apply" onclick="applyStyle()">✅ 適用</button>
+  </div>
+</div>
+<header>
+  <h1>区画整理事業行程表入力ツール ver.1</h1>
+  <span>複数バー / 日付指定 / 図形バー / MS記号 / Undo・Redo / Excel直接出力</span>
+</header>
+<div class="container">
+<div class="section">
+  <div class="sec-title">📋 基礎情報</div>
+  <div class="g3">
+    <div class="full"><label>事業名</label>
+      <input type="text" id="proj-title" value="知立駅南土地区画整理事業　事業認可に向けた行程表（素案）"></div>
+    <div><label>業務場所</label><input type="text" id="proj-location" placeholder="愛知県知立市"></div>
+    <div><label>発注者名</label><input type="text" id="proj-client" placeholder="知立市 都市建設部" value="知立市 都市建設部"></div>
+    <div><label>担当部署</label><input type="text" id="proj-dept" placeholder="早川都市計画株式会社" value="早川都市計画株式会社"></div>
+    <div><label>担当者名</label><input type="text" id="proj-person" placeholder="早川 正樹" value="早川 正樹"></div>
+    <div><label>作成日</label><input type="date" id="proj-created"></div>
+    <div><label>更新日</label><input type="date" id="proj-updated"></div>
+    <div class="full"><label>注記</label>
+      <input type="text" id="proj-note" value="※R10年度事業認可、R12年度仮換地指定を想定"></div>
+  </div>
+</div>
+<div class="section">
+  <div class="sec-title">⏱️ 時間軸設定</div>
+  <div class="g4">
+    <div><label>時間軸</label>
+      <select id="axis-type" onchange="buildLegend()">
+        <option value="month">月単位</option>
+        <option value="quarter" selected>四半期</option>
+        <option value="half">半期</option>
+        <option value="year">年度単位</option>
+      </select></div>
+    <div><label>開始日</label><input type="date" id="start-date" value="2024-04-01" onchange="buildLegend()"></div>
+    <div><label>開始年度（西暦 例:2024）</label><input type="text" id="start-fy" value="2024" onchange="buildLegend()"></div>
+    <div><label>年度数</label>
+      <select id="fy-count" onchange="buildLegend()">
+        <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+        <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+        <option value="7">7</option><option value="8" selected>8</option><option value="9">9</option>
+        <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+        <option value="13">13</option><option value="14">14</option><option value="15">15</option>
+        <option value="16">16</option><option value="17">17</option><option value="18">18</option>
+        <option value="19">19</option><option value="20">20</option><option value="21">21</option>
+        <option value="22">22</option><option value="23">23</option><option value="24">24</option>
+        <option value="25">25</option>
+      </select></div>
+  </div>
+  <div class="axis-info" id="axis-info"></div>
+</div>
+<div class="section">
+  <div class="sec-title">📝 行程入力
+    <span style="font-size:10px;font-weight:normal;color:#888;margin-left:8px;">＋バー追加で同一行に複数バーを設定できます</span>
+  </div>
+  <div class="task-wrap">
+  <table class="tt">
+    <thead><tr>
+      <th class="td-num">#</th><th class="td-lv">階層</th>
+      <th class="td-name">工種</th><th class="td-sub">種別</th>
+      <th class="td-bars">バー期間（開始〜終了）・スタイル</th>
+      <th class="td-cp">CP</th><th class="td-memo">摘要</th>
+      <th class="td-ops">操作</th>
+    </tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  </div>
+  <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:8px;">
+    <span style="font-size:11px;font-weight:bold;color:#1f4e79;white-space:nowrap;">追加：</span>
+    <div class="btn-row" style="margin:0;gap:6px;">
+      <button class="btn btn-lv1" onclick="addRow('task','lv1')">＋ 大項目</button>
+      <button class="btn btn-lv2" onclick="addRow('task','lv2')">＋ 中項目</button>
+      <button class="btn btn-lv3" onclick="addRow('task','lv3')">＋ 小項目</button>
+      <button class="btn btn-ms"  onclick="addRow('milestone','lv2')">◆ マイルストーン</button>
+      <button class="btn btn-sp"  onclick="addRow('spacer','')">― 区切り</button>
+    </div>
+  </div>
+  <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:6px;">
+    <span style="font-size:11px;font-weight:bold;color:#555;white-space:nowrap;">修正：</span>
+    <div class="btn-row" style="margin:0;gap:6px;">
+      <button class="btn btn-undo" onclick="undoLast()" title="直前の操作を取り消す">↩ 元に戻す</button>
+      <button class="btn btn-redo" onclick="redoNext()" title="取り消した操作をやり直す">↪ やり直す</button>
+      <button class="btn btn-clr"  onclick="clearAll()" title="全行を削除してリセット">🗑 全クリア</button>
+      <button class="btn btn-smp"  onclick="loadSample()" title="知立駅南デモデータを読み込む（現在の入力は消えます）" style="background:#555;color:#fff;">📋 デモデータ</button>
+      <button class="btn" onclick="saveToFile()" title="JSONファイルに保存" style="background:#0a7d36;color:#fff;">💾 保存</button>
+      <button class="btn" onclick="loadFromFile()" title="JSONファイルから読込み" style="margin-left:4px;background:#2e75b6;color:#fff;">📂 読込み</button>
+    </div>
+  </div>
+</div>
+<div class="section">
+  <div class="sec-title">📥 出力</div>
+  <div class="btn-row">
+    <button class="btn" style="background:#c75000;color:#fff;font-size:13px;padding:8px 22px;" onclick="showPreview()">🖨️ 行程表プレビュー / 印刷</button>
+  </div>
+  <div id="dl-msg"></div>
+</div>
+</div>
+<style>
+
+/* ===== ベース ===== */
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#1f4e79;--teal:#2e75b6;--sky:#bdd7ee;--pale:#edf3fb;
+  --lv1bg:#d6e4f0;--lv2bg:#eef4fb;--lv3bg:#f8fafe;--msbg:#fff8e1;
+  --sp:#f0f0f0;--hdr2:#dce6f1;
+  --border:#e8e8e8;
+  --cp:#c00000;
+  --row-h:22px; /* セル行高 */
+  --hdr-h:16px;
+}
+body{font-family:"Meiryo","Yu Gothic",sans-serif;font-size:12px;background:#f2f5f9;color:#222;}
+
+/* ===== ツールバー ===== */
+#pv-toolbar{
+  position:sticky;top:0;z-index:100;
+  background:#1f4e79;color:#fff;
+  display:flex;align-items:center;gap:10px;padding:7px 14px;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);
+}
+#pv-toolbar h1{font-size:13px;font-weight:bold;margin-right:auto;}
+.tbtn{
+  padding:5px 12px;border:1.5px solid rgba(255,255,255,.5);border-radius:4px;
+  background:transparent;color:#fff;font-size:11px;cursor:pointer;white-space:nowrap;
+  transition:background .15s;font-family:inherit;font-weight:bold;
+}
+.tbtn:hover{background:rgba(255,255,255,.15);}
+.tbtn.primary{background:#2e75b6;border-color:#4472c4;}
+.tbtn.primary:hover{background:#1f5fa6;}
+select.tbtn{padding:4px 8px;width:auto;}
+#pv-page-info{font-size:10px;opacity:.7;}
+
+/* ===== スクロールコンテナ ===== */
+#pv-scroll-wrap{overflow:auto;padding:16px;}
+
+/* ===== 行程表本体 ===== */
+.gantt-table{
+  border-collapse:collapse;
+  font-size:9px;
+  font-family:"Meiryo","Yu Gothic",sans-serif;
+  background:#fff;
+  box-shadow:0 0 10px rgba(0,0,0,.10);
+  /* 印刷ではA3横に収める */
+}
+.gantt-table td,.gantt-table th{
+  border:1px solid var(--border);
+  padding:1px 3px;
+  white-space:nowrap;
+  height:var(--row-h);
+  line-height:1.2;
+  vertical-align:middle;
+}
+/* gcセルの縦罫線はbox-shadow(inset)で描画→バーより背面・空セルでも表示・印刷対応 */
+.gantt-table td.gc{
+  border:none !important;
+  background-image:none !important;
+  background-color:#fff;
+  position:relative;
+  overflow:visible;
+  padding:0;
+  /* 右辺にシャドウで縦線を描く（バーより背面・印刷にも反映） */
+  box-shadow: inset -1px 0 0 var(--border);
+}
+
+/* ヘッダー列 */
+.gantt-table th{
+  background:var(--navy);color:#fff;
+  font-size:8px;font-weight:bold;text-align:center;
+}
+.col-lv1{width:70px;min-width:70px;}
+.col-lv2{width:54px;min-width:54px;}
+.col-lv3{width:110px;min-width:110px;white-space:normal;word-break:keep-all;}
+.col-sub{width:70px;min-width:70px;white-space:normal;word-break:keep-all;}
+.col-memo{width:58px;min-width:58px;white-space:normal;word-break:keep-all;}
+
+/* 年度・期ヘッダー */
+.hdr-fy{
+  background:var(--navy);color:#fff;
+  text-align:center;font-size:8px;font-weight:bold;
+  border-left:1px solid var(--border) !important;
+}
+.hdr-prd{
+  background:var(--hdr2);color:var(--navy);
+  text-align:center;font-size:7px;font-weight:bold;
+}
+.hdr-prd.fy-start{border-left:1px solid var(--border) !important;}
+
+/* ガントセル基本設定 */
+.gc{
+  width:var(--gc-w,20px);min-width:var(--gc-w,20px);padding:0;
+  background-color:#fff;position:relative;overflow:visible;
+}
+
+/* lv1グループ外・グループ先頭行: 上下border */
+.gantt-table tr:not(.lv1-inner):not(.lv1-notop) .gc{
+  border-top:1px solid var(--border) !important;
+  border-bottom:1px solid var(--border) !important;
+}
+/* lv1-end（グループ末尾）: 下borderのみ */
+.gantt-table tr.lv1-end .gc{
+  border-top:none !important;
+  border-bottom:1px solid var(--border) !important;
+}
+/* lv1-inner かつ非notop（グループ内先頭以外・末尾以外）: 上borderのみ */
+.gantt-table tr.lv1-inner:not(.lv1-notop) .gc{
+  border-top:1px solid var(--border) !important;
+  border-bottom:none !important;
+}
+/* lv1-inner かつ lv1-notop（グループ内中間行）: border上下なし */
+.gantt-table tr.lv1-inner.lv1-notop .gc{
+  border-top:none !important;
+  border-bottom:none !important;
+}
+/* lv1-notop かつ非inner（グループ先頭以外・末尾行）: 下borderのみ */
+.gantt-table tr.lv1-notop:not(.lv1-inner) .gc{
+  border-top:none !important;
+  border-bottom:1px solid var(--border) !important;
+}
+/* tbl-last: 下border */
+.gantt-table tr.tbl-last .gc{
+  border-bottom:1px solid var(--border) !important;
+}
+/* 非gcセルのlv1制御 */
+.gantt-table tr.lv1-inner td:not(.gc){ border-bottom:0 hidden !important; }
+.gantt-table tr.lv1-notop td:not(.gc){ border-top:0 none !important; }
+.gantt-table tr.lv1-end td:not(.gc){ border-bottom:1px solid var(--border) !important; }
+.gantt-table tr.tbl-last td:not(.gc){ border-bottom:1px solid var(--border) !important; }
+#pv-zoom-sel option{color:#222;background:#fff;}
+
+/* バー */
+.bar{
+  position:absolute;
+  top:50%;transform:translateY(-50%);
+  left:2px;right:2px;
+  border-radius:2px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:7px;color:#fff;font-weight:bold;
+  overflow:hidden;white-space:nowrap;
+  pointer-events:none;
+  z-index:3;
+}
+.bar.arrow::after{
+  content:'';position:absolute;right:-8px;top:50%;transform:translateY(-50%);
+  border-top:var(--aw) solid transparent;
+  border-bottom:var(--aw) solid transparent;
+  border-left:var(--aw) solid var(--bc);
+}
+.bar.dash{background:transparent !important;border:2px dashed var(--bc);}
+.bar.sh-solid-rect{background:transparent !important;border:2px solid var(--bc);box-sizing:border-box;}
+.bar.ms-sym{
+  background:transparent !important;
+  font-size:14px;color:var(--bc);
+  left:50%;transform:translate(-50%,-50%);
+  right:auto;width:auto;
+}
+/* CP赤枠 */
+.cp-border-left  { border-left:2px solid var(--cp)!important; }
+.cp-border-right { border-right:2px solid var(--cp)!important; }
+.cp-border-top   { border-top:2px solid var(--cp)!important; }
+.cp-border-bottom{ border-bottom:2px solid var(--cp)!important; }
+
+/* データ行 */
+.row-lv1 .cell-lv1{background:var(--lv1bg);font-size:7px;font-weight:bold;color:var(--navy);text-align:left;padding-left:4px;}
+.row-lv2 .cell-lv1,.row-lv2 .cell-lv3{background:var(--lv2bg);}
+.row-lv2 .cell-lv2{background:var(--lv2bg);font-size:8px;color:#2e5099;text-align:left;padding-left:4px;}
+.row-lv3 .cell-lv3{font-size:8px;color:#555;text-align:left;padding-left:4px;}
+.row-ms  .cell-lv2{background:var(--msbg);font-size:8px;color:#7b5a00;font-weight:bold;}
+.cell-task{font-size:8px;white-space:normal;word-break:keep-all;line-height:1.3;}
+.cell-task.lv1-task{font-weight:bold;color:var(--navy);background:var(--lv1bg);}
+.cell-task.ms-task{color:#7b5a00;background:var(--msbg);}
+.cell-sub{font-size:7px;color:#666;}
+.cell-memo{font-size:7px;color:#444;}
+.row-sp td{background:var(--sp);border-color:#ddd;}
+.gantt-table .row-sp{display:none;}
+
+/* ===== 印刷設定 ===== */
+/* @page はトップレベルに置く（@media内に入れると無視される） */
+@page{size:A3 landscape;margin:10mm;}
+
+@media print{
+  body>*:not(#print-root){display:none!important;}
+  html,body{background:white!important;margin:0!important;padding:0!important;}
+
+  #print-root{
+    display:block!important;
+    margin:0!important;
+    padding:0!important;
+  }
+
+  /* 縦線はbox-shadow(inset)で描画。印刷時も色を保持 */
+  #print-root td.gc{
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+  }
+
+  .box-close,.box-resize,#connector-panel,#pv-overlay{
+    display:none!important;
+  }
+
+  *{
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+  }
+}
+
+/* ズーム */
+#pv-gantt-wrap{transform-origin:top left;position:relative;}
+
+/* ===== テキストボックス・吹き出し（機能A） ===== */
+.pv-textbox,.pv-callout{
+  position:absolute;min-width:80px;min-height:24px;
+  padding:4px 20px 4px 5px;
+  background:rgba(255,255,255,0.93);border:1.5px solid #555;
+  font-size:9px;z-index:50;box-sizing:border-box;
+  white-space:pre-wrap;word-break:break-word;outline:none;
+}
+.pv-callout{border-radius:4px;padding-bottom:14px;}
+.annotation-text{outline:none;cursor:text;white-space:pre-wrap;word-break:break-word;pointer-events:auto;}
+.box-resize{
+  position:absolute;right:2px;bottom:2px;
+  width:12px;height:12px;cursor:se-resize;
+  font-size:10px;line-height:1;color:#aaa;
+  user-select:none;pointer-events:auto;
+}
+.box-close{
+  position:absolute;top:2px;right:2px;width:15px;height:15px;
+  background:#c00;color:#fff;border:none;border-radius:2px;
+  font-size:9px;cursor:pointer;padding:0;line-height:15px;
+  text-align:center;z-index:51;pointer-events:auto;
+}
+
+/* ===== 線・コネクタパネル（機能B） ===== */
+#connector-panel{
+  display:none;position:fixed;top:52px;right:160px;
+  z-index:10100;
+  background:#fff;border:1px solid #aaa;border-radius:6px;
+  padding:8px 12px;box-shadow:0 4px 14px rgba(0,0,0,.18);
+  font-size:11px;white-space:nowrap;min-width:240px;
+}
+#connector-panel label{cursor:pointer;}
+
+#pv-overlay{display:none;position:fixed;inset:0;z-index:10000;background:#f2f5f9;overflow:auto;}
+#pv-toolbar{position:sticky;top:0;z-index:100;}
+</style>
+<div id="pv-overlay">
+<div id="pv-toolbar">
+  <h1>📊 行程表プレビュー</h1>
+  <label style="font-size:10px;opacity:.8">ズーム</label>
+  <select class="tbtn" id="pv-zoom-sel" onchange="setZoom(this.value)">
+    <option value="a3" selected>A3フィット（自動）</option>
+    <option value="0.75">75%</option>
+    <option value="0.85">85%</option>
+    <option value="1.0">100%（画面等倍）</option>
+    <option value="1.2">120%</option>
+    <option value="1.5">150%</option>
+    <option value="2.0">200%</option>
+  </select>
+  <span style="font-size:9px;opacity:.6;white-space:nowrap;">※「A3基準」はA3横(420mm)に収めた目安。実寸はモニターDPIで変動。印刷時はA3横設定を確認</span>
+  <button class="tbtn primary" onclick="printPreview()">🖨️ 印刷 / PDF（A3横）</button>
+  <button class="tbtn" onclick="addTextBox()" title="テキストボックスを追加">📝 テキスト</button>
+  <button class="tbtn" onclick="addCallout()" title="吹き出しを追加">💬 吹き出し</button>
+  <button class="tbtn" onclick="toggleConnectorPanel()" title="線・コネクタ設定">📏 コネクタ</button>
+  <label style="font-size:10px;margin-left:6px;cursor:pointer;">
+    <input type="checkbox" id="chk-bar-text" checked onchange="toggleBarText(this.checked)"> バーテキスト表示
+  </label>
+  <button class="tbtn" onclick="closePreview()" style="background:#c00;border-color:#c00;">✕ 閉じる</button>
+  <span id="pv-page-info"></span>
+</div>
+
+<div id="connector-panel" style="position:fixed;background:#fff;border:1px solid #ccc;
+  border-radius:6px;box-shadow:2px 2px 8px rgba(0,0,0,0.15);padding:8px 10px;
+  z-index:200;min-width:280px;display:none;top:52px;right:160px;">
+  <div class="panel-title" style="cursor:move;display:flex;align-items:center;
+    justify-content:space-between;margin-bottom:6px;padding-bottom:4px;
+    border-bottom:1px solid #eee;">
+    <span style="font-size:11px;font-weight:bold;">🔗 線・コネクタ設定</span>
+    <span style="font-size:9px;color:#aaa;margin:0 6px;">⠿ ドラッグで移動</span>
+    <button id="connector-draw-btn" onclick="toggleConnectorDraw()"
+      style="padding:2px 10px;border:none;border-radius:3px;cursor:pointer;
+      font-size:10px;background:#28a745;color:#fff;">✏️ OFF</button>
+  </div>
+  <div style="margin-bottom:4px;font-size:10px;">
+    <span style="display:inline-block;width:36px;color:#555;">形状:</span>
+    <label style="margin-right:10px;"><input type="radio" name="conn-shape" value="straight" checked> 直線</label>
+    <label><input type="radio" name="conn-shape" value="elbow"> 直角(鍵型)</label>
+  </div>
+  <div style="margin-bottom:6px;font-size:10px;">
+    <span style="display:inline-block;width:36px;color:#555;">線種:</span>
+    <label style="margin-right:10px;"><input type="radio" name="conn-style" value="solid" checked> 実線</label>
+    <label style="margin-right:10px;"><input type="radio" name="conn-style" value="dashed"> 破線</label>
+    <label><input type="radio" name="conn-style" value="dotted"> 点線</label>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;font-size:10px;">
+    <span style="color:#555;">始点:</span>
+    <select id="conn-start-sel" style="font-size:10px;flex:1;">
+      <option value="none">なし</option>
+      <option value="arrow">矢印 →</option>
+      <option value="circle">丸 ●</option>
+      <option value="square">四角 ■</option>
+    </select>
+    <span style="color:#555;">終点:</span>
+    <select id="conn-end-sel" style="font-size:10px;flex:1;">
+      <option value="none">なし</option>
+      <option value="arrow" selected>矢印 →</option>
+      <option value="circle">丸 ●</option>
+      <option value="square">四角 ■</option>
+    </select>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;font-size:10px;">
+    <span style="color:#555;">太さ:</span>
+    <select id="connector-width-sel" style="font-size:10px;flex:1;">
+      <option value="0.25">細(0.25)</option>
+      <option value="0.5">中細(0.5)</option>
+      <option value="0.75" selected>中(0.75)</option>
+      <option value="1.0">太(1.0)</option>
+    </select>
+    <span style="flex:1;"></span>
+  </div>
+  <div style="font-size:9px;color:#999;">
+    直線: ドラッグで引く ／ 直角(鍵型): クリックで折れ点追加→ダブルクリックで確定 ／ ESCでキャンセル<br>
+    <strong>線の上でダブルクリックで削除</strong>
+  </div>
+</div>
+
+<div id="pv-scroll-wrap">
+<div id="pv-gantt-wrap">
+<table class="gantt-table" id="pv-gantt-tbl"></table>
+</div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// =====================================================================
+// 定数
+// =====================================================================
+const COLORS=[
+  {v:"orange", h:"F5B97A",lh:"C98A45",l:"橙"},
+  {v:"blue",   h:"7AB8E8",lh:"4A8BC2",l:"青"},
+  {v:"dkgreen",h:"6FCF97",lh:"3FA86A",l:"濃緑"},
+  {v:"lblue",  h:"A8D5F5",lh:"7CB0DC",l:"水色"},
+  {v:"pink",   h:"F7A8CC",lh:"D06A9C",l:"桃"},
+  {v:"yellow", h:"F7E07A",lh:"C9AE3E",l:"黄"},
+  {v:"gray",   h:"B0BEC5",lh:"78868E",l:"灰"},
+  {v:"red",    h:"F08080",lh:"C85050",l:"赤"},
+  {v:"green",  h:"81E6A8",lh:"4FB87A",l:"緑"},
+  {v:"purple", h:"C39BD3",lh:"9166A8",l:"紫"},
+  {v:"gold",   h:"F0D060",lh:"C0A030",l:"金"},
+  {v:"custom", h:"4472C4",lh:"2E5099",l:"指定"},
+];
+const BAR_SHAPES=[
+  {v:"arrow_sm",l:"矢印(小)",css:"sh-arrow",prst:"rightArrow",a1:40000,a2:40000},
+  {v:"arrow_md",l:"矢印(中)",css:"sh-arrow",prst:"rightArrow",a1:60000,a2:40000},
+  {v:"arrow_lg",l:"矢印(大)",css:"sh-arrow",prst:"rightArrow",a1:80000,a2:40000},
+  {v:"home",    l:"矢印HP",  css:"sh-arrow",prst:"homePlate", a1:null, a2:null},
+  {v:"roundRect",l:"角丸",  css:"sh-round", prst:"roundRect", a1:null, a2:null},
+  {v:"rect",    l:"四角",    css:"",          prst:"rect",      a1:null, a2:null},
+  {v:"dash",    l:"点線枠",  css:"sh-dash",  prst:"rect",      a1:null, a2:null},
+  {v:"solidRect",l:"実線枠", css:"sh-solid-rect", prst:"rect", a1:null, a2:null},
+  {v:"ellipse", l:"楕円",    css:"sh-round", prst:"ellipse",   a1:null, a2:null},
+];
+const MS_SHAPES=[
+  {v:"diamond",  l:"◆",sym:"◆",css:"sh-ms",prst:"diamond"},
+  {v:"star5",    l:"★",sym:"★",css:"sh-ms",prst:"star5"},
+  {v:"circle",   l:"●",sym:"●",css:"sh-ms",prst:"ellipse"},
+  {v:"square_ms",l:"■",sym:"■",css:"sh-ms",prst:"rect"},
+  {v:"triangle", l:"▲",sym:"▲",css:"sh-ms",prst:"triangle"},
+  {v:"diamond_o",l:"◇",sym:"◇",css:"sh-ms",prst:"diamond"},
+  {v:"circle_o", l:"〇",sym:"〇",css:"sh-ms",prst:"ellipse"},
+  {v:"square_o", l:"□",sym:"□",css:"sh-ms",prst:"rect"},
+  {v:"star_o",   l:"☆",sym:"☆",css:"sh-ms",prst:"star5"},
+];
+const WIDTHS=[
+  {v:"thin",l:"細め",ratio:0.42},
+  {v:"mid", l:"標準",ratio:0.65},
+  {v:"thick",l:"太め",ratio:0.82},
+];
+const ALL_SHAPES=[...BAR_SHAPES,...MS_SHAPES];
+const CM=Object.fromEntries(COLORS.map(c=>[c.v,c]));
+const SM=Object.fromEntries(ALL_SHAPES.map(s=>[s.v,s]));
+const WM=Object.fromEntries(WIDTHS.map(w=>[w.v,w]));
+const MS_SYMS=Object.fromEntries(MS_SHAPES.map(s=>[s.v,s.sym]));
+
+// スタイルインデックス定数（styles.xml固定値と対応）
+const S={
+  TITLE:1, SUBTITLE:2,
+  HDR_NORM:3, HDR_FY_FIRST:4, HDR_FY:5,
+  PRD_BLANK:6, PRD_FIRST:7, PRD_NORM:8,
+  LV1_TEXT:9, LV1_BLANK:10, LV1_TASK:11, LV1_SUB:12, LV1_MEMO:13,
+  GANTT_FY:14, GANTT_NORM:15, SPACER:16,
+  LV2_TEXT:17, LV2_BLANK:18, LV2_TASK:19, LV2_SUB:20, LV2_MEMO:21,
+  CP_FIRST:22, CP_MID:23, CP_LAST:24, CP_ALL:25,
+  MS_BLANK:26, MS_TASK:27, MS_SUB:28, MS_MEMO:29,
+  CP_LAST2:30, LV3_TEXT:31, LV3_TASK:32, MS_TEXT:17,
+};
+const MSNS="http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+const THEME_XML=`<?xml version="1.0"?>
+<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office Theme">
+  <a:themeElements>
+    <a:clrScheme name="Office">
+      <a:dk1>
+        <a:sysClr val="windowText" lastClr="000000"/>
+      </a:dk1>
+      <a:lt1>
+        <a:sysClr val="window" lastClr="FFFFFF"/>
+      </a:lt1>
+      <a:dk2>
+        <a:srgbClr val="1F497D"/>
+      </a:dk2>
+      <a:lt2>
+        <a:srgbClr val="EEECE1"/>
+      </a:lt2>
+      <a:accent1>
+        <a:srgbClr val="4F81BD"/>
+      </a:accent1>
+      <a:accent2>
+        <a:srgbClr val="C0504D"/>
+      </a:accent2>
+      <a:accent3>
+        <a:srgbClr val="9BBB59"/>
+      </a:accent3>
+      <a:accent4>
+        <a:srgbClr val="8064A2"/>
+      </a:accent4>
+      <a:accent5>
+        <a:srgbClr val="4BACC6"/>
+      </a:accent5>
+      <a:accent6>
+        <a:srgbClr val="F79646"/>
+      </a:accent6>
+      <a:hlink>
+        <a:srgbClr val="0000FF"/>
+      </a:hlink>
+      <a:folHlink>
+        <a:srgbClr val="800080"/>
+      </a:folHlink>
+    </a:clrScheme>
+    <a:fontScheme name="Office">
+      <a:majorFont>
+        <a:latin typeface="Cambria"/>
+        <a:ea typeface=""/>
+        <a:cs typeface=""/>
+        <a:font script="Jpan" typeface="&#xFF2D;&#xFF33; &#xFF30;&#x30B4;&#x30B7;&#x30C3;&#x30AF;"/>
+        <a:font script="Hang" typeface="&#xB9D1;&#xC740; &#xACE0;&#xB515;"/>
+        <a:font script="Hans" typeface="&#x5B8B;&#x4F53;"/>
+        <a:font script="Hant" typeface="&#x65B0;&#x7D30;&#x660E;&#x9AD4;"/>
+        <a:font script="Arab" typeface="Times New Roman"/>
+        <a:font script="Hebr" typeface="Times New Roman"/>
+        <a:font script="Thai" typeface="Tahoma"/>
+        <a:font script="Ethi" typeface="Nyala"/>
+        <a:font script="Beng" typeface="Vrinda"/>
+        <a:font script="Gujr" typeface="Shruti"/>
+        <a:font script="Khmr" typeface="MoolBoran"/>
+        <a:font script="Knda" typeface="Tunga"/>
+        <a:font script="Guru" typeface="Raavi"/>
+        <a:font script="Cans" typeface="Euphemia"/>
+        <a:font script="Cher" typeface="Plantagenet Cherokee"/>
+        <a:font script="Yiii" typeface="Microsoft Yi Baiti"/>
+        <a:font script="Tibt" typeface="Microsoft Himalaya"/>
+        <a:font script="Thaa" typeface="MV Boli"/>
+        <a:font script="Deva" typeface="Mangal"/>
+        <a:font script="Telu" typeface="Gautami"/>
+        <a:font script="Taml" typeface="Latha"/>
+        <a:font script="Syrc" typeface="Estrangelo Edessa"/>
+        <a:font script="Orya" typeface="Kalinga"/>
+        <a:font script="Mlym" typeface="Kartika"/>
+        <a:font script="Laoo" typeface="DokChampa"/>
+        <a:font script="Sinh" typeface="Iskoola Pota"/>
+        <a:font script="Mong" typeface="Mongolian Baiti"/>
+        <a:font script="Viet" typeface="Times New Roman"/>
+        <a:font script="Uigh" typeface="Microsoft Uighur"/>
+      </a:majorFont>
+      <a:minorFont>
+        <a:latin typeface="Calibri"/>
+        <a:ea typeface=""/>
+        <a:cs typeface=""/>
+        <a:font script="Jpan" typeface="&#xFF2D;&#xFF33; &#xFF30;&#x30B4;&#x30B7;&#x30C3;&#x30AF;"/>
+        <a:font script="Hang" typeface="&#xB9D1;&#xC740; &#xACE0;&#xB515;"/>
+        <a:font script="Hans" typeface="&#x5B8B;&#x4F53;"/>
+        <a:font script="Hant" typeface="&#x65B0;&#x7D30;&#x660E;&#x9AD4;"/>
+        <a:font script="Arab" typeface="Arial"/>
+        <a:font script="Hebr" typeface="Arial"/>
+        <a:font script="Thai" typeface="Tahoma"/>
+        <a:font script="Ethi" typeface="Nyala"/>
+        <a:font script="Beng" typeface="Vrinda"/>
+        <a:font script="Gujr" typeface="Shruti"/>
+        <a:font script="Khmr" typeface="DaunPenh"/>
+        <a:font script="Knda" typeface="Tunga"/>
+        <a:font script="Guru" typeface="Raavi"/>
+        <a:font script="Cans" typeface="Euphemia"/>
+        <a:font script="Cher" typeface="Plantagenet Cherokee"/>
+        <a:font script="Yiii" typeface="Microsoft Yi Baiti"/>
+        <a:font script="Tibt" typeface="Microsoft Himalaya"/>
+        <a:font script="Thaa" typeface="MV Boli"/>
+        <a:font script="Deva" typeface="Mangal"/>
+        <a:font script="Telu" typeface="Gautami"/>
+        <a:font script="Taml" typeface="Latha"/>
+        <a:font script="Syrc" typeface="Estrangelo Edessa"/>
+        <a:font script="Orya" typeface="Kalinga"/>
+        <a:font script="Mlym" typeface="Kartika"/>
+        <a:font script="Laoo" typeface="DokChampa"/>
+        <a:font script="Sinh" typeface="Iskoola Pota"/>
+        <a:font script="Mong" typeface="Mongolian Baiti"/>
+        <a:font script="Viet" typeface="Arial"/>
+        <a:font script="Uigh" typeface="Microsoft Uighur"/>
+      </a:minorFont>
+    </a:fontScheme>
+    <a:fmtScheme name="Office">
+      <a:fillStyleLst>
+        <a:solidFill>
+          <a:schemeClr val="phClr"/>
+        </a:solidFill>
+        <a:gradFill rotWithShape="1">
+          <a:gsLst>
+            <a:gs pos="0">
+              <a:schemeClr val="phClr">
+                <a:tint val="50000"/>
+                <a:satMod val="300000"/>
+              </a:schemeClr>
+            </a:gs>
+            <a:gs pos="35000">
+              <a:schemeClr val="phClr">
+                <a:tint val="37000"/>
+                <a:satMod val="300000"/>
+              </a:schemeClr>
+            </a:gs>
+            <a:gs pos="100000">
+              <a:schemeClr val="phClr">
+                <a:tint val="15000"/>
+                <a:satMod val="350000"/>
+              </a:schemeClr>
+            </a:gs>
+          </a:gsLst>
+          <a:lin ang="16200000" scaled="1"/>
+        </a:gradFill>
+        <a:gradFill rotWithShape="1">
+          <a:gsLst>
+            <a:gs pos="0">
+              <a:schemeClr val="phClr">
+                <a:shade val="51000"/>
+                <a:satMod val="130000"/>
+              </a:schemeClr>
+            </a:gs>
+            <a:gs pos="80000">
+              <a:schemeClr val="phClr">
+                <a:shade val="93000"/>
+                <a:satMod val="130000"/>
+              </a:schemeClr>
+            </a:gs>
+            <a:gs pos="100000">
+              <a:schemeClr val="phClr">
+                <a:shade val="94000"/>
+                <a:satMod val="135000"/>
+              </a:schemeClr>
+            </a:gs>
+          </a:gsLst>
+          <a:lin ang="16200000" scaled="0"/>
+        </a:gradFill>
+      </a:fillStyleLst>
+      <a:lnStyleLst>
+        <a:ln w="9525" cap="flat" cmpd="sng" algn="ctr">
+          <a:solidFill>
+            <a:schemeClr val="phClr">
+              <a:shade val="95000"/>
+              <a:satMod val="105000"/>
+            </a:schemeClr>
+          </a:solidFill>
+          <a:prstDash val="solid"/>
+        </a:ln>
+        <a:ln w="25400" cap="flat" cmpd="sng" algn="ctr">
+          <a:solidFill>
+            <a:schemeClr val="phClr"/>
+          </a:solidFill>
+          <a:prstDash val="solid"/>
+        </a:ln>
+        <a:ln w="38100" cap="flat" cmpd="sng" algn="ctr">
+          <a:solidFill>
+            <a:schemeClr val="phClr"/>
+          </a:solidFill>
+          <a:prstDash val="solid"/>
+        </a:ln>
+      </a:lnStyleLst>
+      <a:effectStyleLst>
+        <a:effectStyle>
+          <a:effectLst>
+            <a:outerShdw blurRad="40000" dist="20000" dir="5400000" rotWithShape="0">
+              <a:srgbClr val="000000">
+                <a:alpha val="38000"/>
+              </a:srgbClr>
+            </a:outerShdw>
+          </a:effectLst>
+        </a:effectStyle>
+        <a:effectStyle>
+          <a:effectLst>
+            <a:outerShdw blurRad="40000" dist="23000" dir="5400000" rotWithShape="0">
+              <a:srgbClr val="000000">
+                <a:alpha val="35000"/>
+              </a:srgbClr>
+            </a:outerShdw>
+          </a:effectLst>
+        </a:effectStyle>
+        <a:effectStyle>
+          <a:effectLst>
+            <a:outerShdw blurRad="40000" dist="23000" dir="5400000" rotWithShape="0">
+              <a:srgbClr val="000000">
+                <a:alpha val="35000"/>
+              </a:srgbClr>
+            </a:outerShdw>
+          </a:effectLst>
+          <a:scene3d>
+            <a:camera prst="orthographicFront">
+              <a:rot lat="0" lon="0" rev="0"/>
+            </a:camera>
+            <a:lightRig rig="threePt" dir="t">
+              <a:rot lat="0" lon="0" rev="1200000"/>
+            </a:lightRig>
+          </a:scene3d>
+          <a:sp3d>
+            <a:bevelT w="63500" h="25400"/>
+          </a:sp3d>
+        </a:effectStyle>
+      </a:effectStyleLst>
+      <a:bgFillStyleLst>
+        <a:solidFill>
+          <a:schemeClr val="phClr"/>
+        </a:solidFill>
+        <a:gradFill rotWithShape="1">
+          <a:gsLst>
+            <a:gs pos="0">
+              <a:schemeClr val="phClr">
+                <a:tint val="40000"/>
+                <a:satMod val="350000"/>
+              </a:schemeClr>
+            </a:gs>
+            <a:gs pos="40000">
+              <a:schemeClr val="phClr">
+                <a:tint val="45000"/>
+                <a:shade val="99000"/>
+                <a:satMod val="350000"/>
+              </a:schemeClr>
+            </a:gs>
+            <a:gs pos="100000">
+              <a:schemeClr val="phClr">
+                <a:shade val="20000"/>
+                <a:satMod val="255000"/>
+              </a:schemeClr>
+            </a:gs>
+          </a:gsLst>
+          <a:path path="circle">
+            <a:fillToRect l="50000" t="-80000" r="50000" b="180000"/>
+          </a:path>
+        </a:gradFill>
+        <a:gradFill rotWithShape="1">
+          <a:gsLst>
+            <a:gs pos="0">
+              <a:schemeClr val="phClr">
+                <a:tint val="80000"/>
+                <a:satMod val="300000"/>
+              </a:schemeClr>
+            </a:gs>
+            <a:gs pos="100000">
+              <a:schemeClr val="phClr">
+                <a:shade val="30000"/>
+                <a:satMod val="200000"/>
+              </a:schemeClr>
+            </a:gs>
+          </a:gsLst>
+          <a:path path="circle">
+            <a:fillToRect l="50000" t="50000" r="50000" b="50000"/>
+          </a:path>
+        </a:gradFill>
+      </a:bgFillStyleLst>
+    </a:fmtScheme>
+  </a:themeElements>
+  <a:objectDefaults/>
+  <a:extraClrSchemeLst/>
+</a:theme>
+`;
+const STYLES_XML=`<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="0"/><fonts count="13"><font><name val="Calibri"/><family val="2"/><color theme="1"/><sz val="11"/><scheme val="minor"/></font><font><name val="Meiryo"/><b val="1"/><color rgb="00FFFFFF"/><sz val="12"/></font><font><name val="Meiryo"/><color rgb="00C00000"/><sz val="8"/></font><font><name val="Meiryo"/><b val="1"/><color rgb="00FFFFFF"/><sz val="8"/></font><font><name val="Meiryo"/><b val="1"/><color rgb="00FFFFFF"/><sz val="9"/></font><font><name val="Meiryo"/><b val="1"/><color rgb="001F4E79"/><sz val="7"/></font><font><name val="Meiryo"/><b val="1"/><color rgb="001F4E79"/><sz val="9"/></font><font><name val="Meiryo"/><color rgb="00666666"/><sz val="8"/></font><font><name val="Meiryo"/><color rgb="00444444"/><sz val="8"/></font><font><name val="Meiryo"/><color rgb="00111111"/><sz val="9"/></font><font><name val="Meiryo"/><color rgb="007B5A00"/><sz val="9"/></font><font><name val="Meiryo"/><color rgb="002E5099"/><sz val="8"/></font><font><name val="Meiryo"/><b val="1"/><color rgb="00111111"/><sz val="9"/></font></fonts><fills count="9"><fill><patternFill/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="001F4E79"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="00EDF3FB"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="00DCE6F1"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="00D6E4F0"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="00FFFFFF"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="00EEF4FB"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="00FFF8E1"/></patternFill></fill></fills><borders count="13"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="00AAAAAA"/></left><right style="thin"><color rgb="00AAAAAA"/></right><top style="thin"><color rgb="00AAAAAA"/></top><bottom style="thin"><color rgb="00AAAAAA"/></bottom></border><border><left style="medium"><color rgb="00888888"/></left><right style="thin"><color rgb="00AAAAAA"/></right><top style="thin"><color rgb="00AAAAAA"/></top><bottom style="thin"><color rgb="00AAAAAA"/></bottom></border><border><left style="medium"><color rgb="00888888"/></left><right style="thin"><color rgb="00EEEEEE"/></right><top style="thin"><color rgb="00EEEEEE"/></top><bottom style="thin"><color rgb="00EEEEEE"/></bottom></border><border><left style="thin"><color rgb="00EEEEEE"/></left><right style="thin"><color rgb="00EEEEEE"/></right><top style="thin"><color rgb="00EEEEEE"/></top><bottom style="thin"><color rgb="00EEEEEE"/></bottom></border><border><left style="thin"><color rgb="00AAAAAA"/></left><right style="thin"><color rgb="00AAAAAA"/></right><top/><bottom/></border><border><left style="medium"><color rgb="00C00000"/></left><right style="thin"><color rgb="00EEEEEE"/></right><top style="medium"><color rgb="00C00000"/></top><bottom style="medium"><color rgb="00C00000"/></bottom></border><border><left style="thin"><color rgb="00EEEEEE"/></left><right style="thin"><color rgb="00EEEEEE"/></right><top style="medium"><color rgb="00C00000"/></top><bottom style="medium"><color rgb="00C00000"/></bottom></border><border><left style="medium"><color rgb="00888888"/></left><right style="medium"><color rgb="00C00000"/></right><top style="medium"><color rgb="00C00000"/></top><bottom style="medium"><color rgb="00C00000"/></bottom></border><border><left style="medium"><color rgb="00C00000"/></left><right style="medium"><color rgb="00C00000"/></right><top style="medium"><color rgb="00C00000"/></top><bottom style="medium"><color rgb="00C00000"/></bottom></border><border><left style="thin"><color rgb="00AAAAAA"/></left><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="00AAAAAA"/></left><right style="thin"><color rgb="00AAAAAA"/></right><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="00AAAAAA"/></left><right style="thin"><color rgb="00AAAAAA"/></right><top/><bottom style="thin"><color rgb="00AAAAAA"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="33"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" pivotButton="0" quotePrefix="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="2" fillId="3" borderId="0" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="3" fillId="2" borderId="1" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="4" fillId="2" borderId="2" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="4" fillId="2" borderId="1" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="4" borderId="1" pivotButton="0" quotePrefix="0" xfId="0"/><xf numFmtId="0" fontId="5" fillId="4" borderId="2" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="5" fillId="4" borderId="1" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="6" fillId="5" borderId="1" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="center" vertical="center" textRotation="90" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="5" borderId="1" pivotButton="0" quotePrefix="0" xfId="0"/><xf numFmtId="0" fontId="6" fillId="5" borderId="1" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="7" fillId="5" borderId="1" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="8" fillId="5" borderId="1" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="6" borderId="3" pivotButton="0" quotePrefix="0" xfId="0"/><xf numFmtId="0" fontId="0" fillId="6" borderId="4" pivotButton="0" quotePrefix="0" xfId="0"/><xf numFmtId="0" fontId="0" fillId="0" borderId="11" pivotButton="0" quotePrefix="0" xfId="0"/><xf numFmtId="0" fontId="11" fillId="7" borderId="1" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="7" borderId="1" pivotButton="0" quotePrefix="0" xfId="0"/><xf numFmtId="0" fontId="9" fillId="7" borderId="1" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="7" fillId="7" borderId="1" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="8" fillId="7" borderId="1" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="6" borderId="6" pivotButton="0" quotePrefix="0" xfId="0"/><xf numFmtId="0" fontId="0" fillId="6" borderId="7" pivotButton="0" quotePrefix="0" xfId="0"/><xf numFmtId="0" fontId="0" fillId="6" borderId="8" pivotButton="0" quotePrefix="0" xfId="0"/><xf numFmtId="0" fontId="0" fillId="0" borderId="12" pivotButton="0" quotePrefix="0" xfId="0"/><xf numFmtId="0" fontId="0" fillId="8" borderId="1" pivotButton="0" quotePrefix="0" xfId="0"/><xf numFmtId="0" fontId="10" fillId="8" borderId="1" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="7" fillId="8" borderId="1" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="8" fillId="8" borderId="1" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="6" borderId="9" pivotButton="0" quotePrefix="0" xfId="0"/><xf numFmtId="0" fontId="12" fillId="4" borderId="1" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="9" fillId="0" borderId="1" applyAlignment="1" pivotButton="0" quotePrefix="0" xfId="0"><alignment horizontal="left" vertical="center" wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0" hidden="0"/></cellStyles><tableStyles count="0" defaultTableStyle="TableStyleMedium9" defaultPivotStyle="PivotStyleLight16"/><colors><indexedColors><rgbColor rgb="00000000"/><rgbColor rgb="00FFFFFF"/><rgbColor rgb="00FF0000"/><rgbColor rgb="0000FF00"/><rgbColor rgb="000000FF"/><rgbColor rgb="00FFFF00"/><rgbColor rgb="00FF00FF"/><rgbColor rgb="0000FFFF"/><rgbColor rgb="00000000"/><rgbColor rgb="00FFFFFF"/><rgbColor rgb="00FF0000"/><rgbColor rgb="0000FF00"/><rgbColor rgb="000000FF"/><rgbColor rgb="00FFFF00"/><rgbColor rgb="00FF00FF"/><rgbColor rgb="0000FFFF"/><rgbColor rgb="00800000"/><rgbColor rgb="00008000"/><rgbColor rgb="00000080"/><rgbColor rgb="00808000"/><rgbColor rgb="00800080"/><rgbColor rgb="00008080"/><rgbColor rgb="00C0C0C0"/><rgbColor rgb="00808080"/><rgbColor rgb="009999FF"/><rgbColor rgb="00993366"/><rgbColor rgb="00FFFFCC"/><rgbColor rgb="00CCFFFF"/><rgbColor rgb="00660066"/><rgbColor rgb="00FF8080"/><rgbColor rgb="000066CC"/><rgbColor rgb="00CCCCFF"/><rgbColor rgb="00000080"/><rgbColor rgb="00FF00FF"/><rgbColor rgb="00FFFF00"/><rgbColor rgb="0000FFFF"/><rgbColor rgb="00800080"/><rgbColor rgb="00800000"/><rgbColor rgb="00008080"/><rgbColor rgb="000000FF"/><rgbColor rgb="0000CCFF"/><rgbColor rgb="00CCFFFF"/><rgbColor rgb="00CCFFCC"/><rgbColor rgb="00FFFF99"/><rgbColor rgb="0099CCFF"/><rgbColor rgb="00FF99CC"/><rgbColor rgb="00CC99FF"/><rgbColor rgb="00FFCC99"/><rgbColor rgb="003366FF"/><rgbColor rgb="0033CCCC"/><rgbColor rgb="0099CC00"/><rgbColor rgb="00FFCC00"/><rgbColor rgb="00FF9900"/><rgbColor rgb="00FF6600"/><rgbColor rgb="00666699"/><rgbColor rgb="00969696"/><rgbColor rgb="00003366"/><rgbColor rgb="00339966"/><rgbColor rgb="00003300"/><rgbColor rgb="00333300"/><rgbColor rgb="00993300"/><rgbColor rgb="00993366"/><rgbColor rgb="00333399"/><rgbColor rgb="00333333"/></indexedColors></colors></styleSheet>`;
+const RELS_XML=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml" Id="rId1"/><Relationship Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml" Id="rId2"/><Relationship Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml" Id="rId3"/></Relationships>`;
+const APP_XML=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>区画整理事業行程表入力ツール ver.1</Application><AppVersion>3.1</AppVersion></Properties>`;
+
+
+function shapeSVG(v,f='4472C4'){
+  const s=`fill="#${f}"`;
+  if(['arrow_sm','arrow_md','arrow_lg','home'].includes(v))
+    return`<svg width="30" height="12"><polygon points="0,2 22,2 22,0 30,6 22,12 22,10 0,10" ${s}/></svg>`;
+  if(v==='ellipse')return`<svg width="30" height="12"><ellipse cx="15" cy="6" rx="14" ry="5" ${s}/></svg>`;
+  if(v==='dash')return`<svg width="30" height="12"><rect x="1" y="2" width="28" height="8" fill="none" stroke="#${f}" stroke-width="2" stroke-dasharray="4,2"/></svg>`;
+  if(v==='roundRect')return`<svg width="30" height="12"><rect x="1" y="1" width="28" height="10" rx="4" ${s}/></svg>`;
+  return`<svg width="30" height="12"><rect x="1" y="1" width="28" height="10" ${s}/></svg>`;
+}
+
+(function initPanel(){
+  const cg=document.getElementById('color-grid');
+  COLORS.forEach(c=>{
+    const d=document.createElement('div');
+    d.className='chip-c';d.dataset.v=c.v;d.style.background='#'+c.h;d.title=c.l;d.textContent=c.l;
+    if(['9DC3E6','FFB800'].includes(c.h))d.style.color='#333';
+    d.onclick=()=>{cg.querySelectorAll('.chip-c').forEach(x=>x.classList.remove('on'));d.classList.add('on');panelC=c.v;
+      document.getElementById('custom-hex-row').style.display=c.v==='custom'?'block':'none';};
+    cg.appendChild(d);
+  });
+  function mkChips(shapes,gid){
+    const g=document.getElementById(gid);
+    shapes.forEach(s=>{
+      const d=document.createElement('div');d.className='chip-s';d.dataset.v=s.v;
+      d.innerHTML=s.sym
+        ?`<div style="font-size:22px;line-height:1.2;text-align:center">${s.sym}</div><div>${s.l}</div>`
+        :`<div style="display:flex;justify-content:center;margin-bottom:2px">${shapeSVG(s.v)}</div><div>${s.l}</div>`;
+      d.onclick=()=>{document.querySelectorAll('.chip-s').forEach(x=>x.classList.remove('on'));d.classList.add('on');panelS=s.v;};
+      g.appendChild(d);
+    });
+  }
+  mkChips(BAR_SHAPES,'shape-bar-grid');mkChips(MS_SHAPES,'shape-ms-grid');
+  const wg=document.getElementById('width-grid');
+  WIDTHS.forEach(w=>{
+    const d=document.createElement('div');d.className='chip-w';d.dataset.v=w.v;
+    const h=w.v==='thin'?4:w.v==='thick'?12:8;
+    d.innerHTML=`<svg width="30" height="12" style="display:block;margin:0 auto 2px"><rect x="1" y="${6-h/2}" width="28" height="${h}" rx="2" fill="#4472C4"/></svg>${w.l}`;
+    d.onclick=()=>{wg.querySelectorAll('.chip-w').forEach(x=>x.classList.remove('on'));d.classList.add('on');panelW=w.v;};
+    wg.appendChild(d);
+  });
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.onclick=()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));
+      document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('on'));
+      btn.classList.add('on');document.getElementById(btn.dataset.tab).classList.add('on');
+    };
+  });
+})();
+
+let panelId=null,panelBarIdx=null,panelC='blue',panelS='roundRect',panelW='mid';
+function openPanel(rowId,barIdx,el){
+  panelId=rowId;panelBarIdx=barIdx;
+  const entry=document.querySelector(`#row-${rowId} .bar-entry[data-idx="${barIdx}"]`);
+  if(entry){panelC=entry.dataset.color||'blue';panelS=entry.dataset.shape||'roundRect';panelW=entry.dataset.width||'mid';}
+  document.querySelectorAll('.chip-c').forEach(x=>x.classList.toggle('on',x.dataset.v===panelC));
+  document.querySelectorAll('.chip-s').forEach(x=>x.classList.toggle('on',x.dataset.v===panelS));
+  document.querySelectorAll('.chip-w').forEach(x=>x.classList.toggle('on',x.dataset.v===panelW));
+  document.getElementById('custom-hex-row').style.display=panelC==='custom'?'block':'none';
+  const isMsShape=MS_SHAPES.some(s=>s.v===panelS);
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('on'));
+  const at=isMsShape?'tab-ms':'tab-bar';
+  document.querySelector(`[data-tab="${at}"]`).classList.add('on');
+  document.getElementById(at).classList.add('on');
+  const panel=document.getElementById('style-panel');
+  panel.style.visibility='hidden';panel.style.display='block';
+  const pw=panel.offsetWidth,ph=panel.offsetHeight;panel.style.visibility='';
+  panel.style.left=Math.max(8,Math.round((window.innerWidth-pw)/2))+'px';
+  panel.style.top=Math.max(8,Math.round((window.innerHeight-ph)/2))+'px';
+}
+function closePanel(){document.getElementById('style-panel').style.display='none';}
+function applyStyle(){
+  const entry=document.querySelector(`#row-${panelId} .bar-entry[data-idx="${panelBarIdx}"]`);
+  if(!entry){closePanel();return;}
+  entry.dataset.color=panelC;entry.dataset.shape=panelS;entry.dataset.width=panelW;
+  entry.dataset.customHex=panelC==='custom'?(document.getElementById('custom-hex-input').value.replace('#','')||'4472C4'):'';
+  refreshBarPrev(entry);closePanel();
+}
+document.addEventListener('click',e=>{
+  const p=document.getElementById('style-panel');
+  if(p.style.display==='block'&&!p.contains(e.target)&&!e.target.closest('.bprev'))closePanel();
+});
+function getHex(entry){
+  const c=entry.dataset.color||'blue';
+  if(c==='custom')return entry.dataset.customHex||'4472C4';
+  if(c==='gold')return'B8860B';
+  return(CM[c]||CM['blue']).h;
+}
+function refreshBarPrev(entry){
+  const prev=entry.querySelector('.bprev');if(!prev)return;
+  const shape=entry.dataset.shape||'roundRect';
+  const width=entry.dataset.width||'mid';
+  const hex=getHex(entry);
+  const sObj=SM[shape]||SM['roundRect'];
+  const wObj=WM[width]||WM['mid'];
+  const isMsSym=!!sObj.sym;
+  const isDash=shape==='dash';
+  const isSolid=shape==='solidRect';
+  const hpx=wObj.v==='thin'?10:wObj.v==='thick'?26:18;
+  if(isMsSym){
+    prev.className='bprev sh-ms';
+    prev.style.cssText=`color:#${hex};font-size:18px;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:transparent;border:none;`;
+    prev.innerHTML=sObj.sym;
+  } else {
+    prev.className='bprev '+(sObj.css||'')+' w-'+wObj.v;
+    prev.style.height=hpx+'px';
+    prev.style.setProperty('--pc','#'+hex);
+    prev.style.setProperty('--aw',(hpx/2)+'px');
+    prev.style.background=(isDash||isSolid)?'transparent':'#'+hex;
+    prev.style.border=isDash?`2px dashed #${hex}`:isSolid?`2px solid #${hex}`:'none';
+    prev.style.width=sObj.css==='sh-arrow'?'74px':'92px';
+    prev.style.color='';prev.innerHTML='';
+  }
+}
+
+const undoStack=[],redoStack=[];
+function saveUndo(){const h=document.getElementById('tbody').innerHTML;undoStack.push(h);if(undoStack.length>30)undoStack.shift();redoStack.length=0;}
+function undoLast(){if(!undoStack.length)return;redoStack.push(document.getElementById('tbody').innerHTML);document.getElementById('tbody').innerHTML=undoStack.pop();document.querySelectorAll('#tbody .bar-entry').forEach(e=>refreshBarPrev(e));}
+function redoNext(){if(!redoStack.length)return;undoStack.push(document.getElementById('tbody').innerHTML);document.getElementById('tbody').innerHTML=redoStack.pop();document.querySelectorAll('#tbody .bar-entry').forEach(e=>refreshBarPrev(e));}
+
+function getAxisCols(){
+  const tp=document.getElementById('axis-type').value;
+  const fyc=parseInt(document.getElementById('fy-count').value)||8;
+  const sfy=document.getElementById('start-fy').value||'2024';
+  // 西暦入力 → 令和年度（令和元年=2019, 西暦-2018=令和年度）
+  const startSeireki=parseInt((sfy.match(/\d+/)||['2024'])[0]);
+  const rb=startSeireki-2018;
+  const sd=new Date(document.getElementById('start-date').value||'2024-04-01');
+  const sy=sd.getFullYear();
+  const cols=[],p=(fy,pd,fs,s,e)=>cols.push({fy,period:pd,is_fy_start:fs,startDate:s,endDate:e});
+  for(let i=0;i<fyc;i++){
+    const fy=`R${rb+i}(${sy+i})`,y=sy+i;
+    if(tp==='quarter'){
+      // 年度を4分割（1/4=4-6月, 2/4=7-9月, 3/4=10-12月, 4/4=1-3月）
+      p(fy,'1/4',true, new Date(y,3,1),  new Date(y,5,30));
+      p(fy,'2/4',false,new Date(y,6,1),  new Date(y,8,30));
+      p(fy,'3/4',false,new Date(y,9,1),  new Date(y,11,31));
+      p(fy,'4/4',false,new Date(y+1,0,1),new Date(y+1,2,31));
+    } else if(tp==='half'){
+      p(fy,'上半期',true, new Date(y,3,1), new Date(y,8,30));
+      p(fy,'下半期',false,new Date(y,9,1), new Date(y+1,2,31));
+    } else if(tp==='year'){
+      p(fy,'',true,new Date(y,3,1),new Date(y+1,2,31));
+    } else {
+      const ms=['4月','5月','6月','7月','8月','9月','10月','11月','12月','1月','2月','3月'];
+      ms.forEach((m,j)=>{const mo=j<9?j+3:j-9,yr=j<9?y:y+1;p(fy,m,j===0,new Date(yr,mo,1),new Date(yr,mo+1,0));});
+    }
+  }
+  return cols;
+}
+function dateToColRange(s,e,cols){
+  if(!s)return{from:0,to:0};
+  const sd=new Date(s),ed=e?new Date(e):sd;
+  let from=0,to=0;
+  cols.forEach((col,i)=>{
+    if(col.startDate<=sd&&sd<=col.endDate&&from===0)from=i+1;
+    if(col.startDate<=ed&&ed<=col.endDate)to=i+1;
+  });
+  if(from===0)for(let i=0;i<cols.length;i++)if(sd<=cols[i].endDate){from=i+1;break;}
+  if(to===0)to=from;
+  return{from,to};
+}
+function buildLegend(){
+  const cols=getAxisCols();
+  const f=cols[0],l=cols[cols.length-1];
+  document.getElementById('axis-info').textContent=`対象期間: ${f.fy} ${f.period} 〜 ${l.fy} ${l.period}　（合計 ${cols.length} 期）`;
+}
+
+let rid=0,barCnt=0;
+function lvSel(sel){return['lv1','lv2','lv3'].map(l=>`<option value="${l}"${l===sel?' selected':''}>${l==='lv1'?'大':l==='lv2'?'中':'小'}</option>`).join('');}
+function xe(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function colName(n){let s='';while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26);}return s;}
+function makeCell(ref,val,sIdx,type){
+  if(val===''||val===null||val===undefined){return '<c r="'+ref+'" s="'+sIdx+'"/>';}
+  if(type==='n'){return '<c r="'+ref+'" s="'+sIdx+'" t="n"><v>'+xe(val)+'</v></c>';}
+  return '<c r="'+ref+'" s="'+sIdx+'" t="inlineStr"><is><t>'+xe(val)+'</t></is></c>';
+}
+
+function makeBarEntry(rowId,idx,d){
+  d=d||{};
+  const entry=document.createElement('div');
+  entry.className='bar-entry';entry.dataset.idx=idx;
+  entry.dataset.color=d.color||'blue';entry.dataset.shape=d.shape||'roundRect';
+  entry.dataset.width=d.width||'mid';entry.dataset.customHex=d.customHex||'';
+  entry.innerHTML=`<input type="date" class="b-start" value="${d.start||''}"><span class="date-sep">〜</span><input type="date" class="b-end" value="${d.end||''}"><div class="bprev" onclick="openPanel(${rowId},${idx},this)" title="変更"></div><button class="bar-del" onclick="this.closest('.bar-entry').remove()" title="削除">🗑</button>`;
+  refreshBarPrev(entry);
+  return entry;
+}
+function addRow(type,level,d){
+  d=d||{};saveUndo();rid++;
+  const id=rid;
+  const tbody=document.getElementById('tbody');
+  const tr=document.createElement('tr');
+  tr.id='row-'+id;tr.dataset.type=type;tr.dataset.level=level||'';
+  if(type==='spacer'){
+    tr.className='row-sp';
+    tr.innerHTML='<td class="td-num" style="color:#bbb">'+id+'</td><td colspan="6" style="background:#f0f0f0;color:#aaa;font-size:10px;text-align:center;">― 区切り行 ―</td><td class="td-ops"><button class="btn-del" onclick="delRow('+id+')" title="削除">🗑</button></td>';
+    tbody.appendChild(tr);return;
+  }
+  const lv=d.level||level||'lv2';
+  const isMil=(type==='milestone');
+  if(isMil)tr.className='row-ms';
+  tr.innerHTML='<td class="td-num">'+id+'</td>'
+    +'<td class="td-lv"><select class="f-lv" style="border:none;background:transparent;width:100%;font-size:10px;">'+lvSel(lv)+'</select></td>'
+    +(isMil?'<td class="td-name" style="color:#b8860b;font-weight:bold;">◆&nbsp;<input type="text" class="f-task" value="'+xe(d.task||'')+'"></td>'
+           :'<td class="td-name"><input type="text" class="f-task" placeholder="工種名" value="'+xe(d.task||'')+'"></td>')
+    +'<td class="td-sub"><input type="text" class="f-sub" value="'+xe(d.sub||'')+'"></td>'
+    +'<td class="td-bars"><div class="bars-area" id="bars-'+id+'"></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px;"><button class="bar-add" onclick="addBarEntry('+id+')">＋バー追加</button><label style="font-size:10px;white-space:nowrap;cursor:pointer;"><input type="checkbox" class="chk-show-text"'+(d.showText===false?'':' checked')+'> テキスト</label></div></td>'
+    +'<td class="td-cp"><input type="checkbox" class="f-cp cp-chk"'+(d.cp?' checked':'')+'></td>'
+    +'<td class="td-memo"><textarea class="f-memo" rows="1">'+xe(d.memo||'')+'</textarea></td>'
+    +'<td class="td-ops"><button class="btn-up" onclick="moveUp('+id+')">▲</button><button class="btn-dn" onclick="moveDown('+id+')">▼</button><button class="btn-del" onclick="delRow('+id+')" title="削除">🗑</button></td>';
+  tbody.appendChild(tr);
+  const ba=document.getElementById('bars-'+id);
+  const initBars=d.bars||(isMil
+    ?[{start:d.start||'',end:d.start||'',color:'gold',shape:'diamond',width:'mid'}]
+    :[{start:d.start||'',end:d.end||'',color:d.color||(lv==='lv1'?'lblue':'blue'),shape:d.shape||(lv==='lv1'?'rect':lv==='lv2'?'arrow_md':'roundRect'),width:d.width||'mid'}]);
+  initBars.forEach(b=>ba.appendChild(makeBarEntry(id,barCnt++,b)));
+}
+function addBarEntry(rowId){saveUndo();const ba=document.getElementById('bars-'+rowId);ba.appendChild(makeBarEntry(rowId,barCnt++,{}));}
+function delRow(id){saveUndo();document.getElementById('row-'+id)?.remove();}
+function moveUp(id){saveUndo();const t=document.getElementById('row-'+id);if(t?.previousElementSibling)t.parentNode.insertBefore(t,t.previousElementSibling);}
+function moveDown(id){saveUndo();const t=document.getElementById('row-'+id);if(t?.nextElementSibling)t.parentNode.insertBefore(t.nextElementSibling,t);}
+function clearAll(){if(!confirm('全クリアしますか？'))return;saveUndo();document.getElementById('tbody').innerHTML='';rid=0;}
+
+function collectRows(){
+  const rows=[];
+  document.querySelectorAll('#tbody tr').forEach(tr=>{
+    const tp=tr.dataset.type;
+    if(tp==='spacer'){rows.push({type:'spacer'});return;}
+    const bars=[];
+    tr.querySelectorAll('.bar-entry').forEach(entry=>{
+      bars.push({start:entry.querySelector('.b-start')?.value||'',end:entry.querySelector('.b-end')?.value||'',
+        color:entry.dataset.color||'blue',customHex:entry.dataset.customHex||'',
+        shape:entry.dataset.shape||'roundRect',width:entry.dataset.width||'mid'});
+    });
+    const chkText=tr.querySelector('.chk-show-text');
+    rows.push({type:tp,level:tr.querySelector('.f-lv')?.value||'lv2',
+      task:tr.querySelector('.f-task')?.value.trim()||'',
+      sub:tr.querySelector('.f-sub')?.value.trim()||'',
+      cp:tr.querySelector('.f-cp')?.checked||false,
+      showText:chkText?chkText.checked:true,
+      memo:tr.querySelector('.f-memo')?.value.trim()||'',bars});
+  });
+  return rows;
+}
+
+// ===== 修正G: 保存・読込み（JSONファイル） =====
+function loadRows(rows){
+  document.getElementById('tbody').innerHTML='';rid=0;
+  (rows||[]).forEach(r=>addRow(r.type||'task',r.level||'lv2',r));
+  undoStack.length=0;redoStack.length=0; // Undo/Redo履歴リセット
+}
+function saveToFile(){
+  const gv=id=>{const el=document.getElementById(id);return el?el.value:'';};
+  const meta={
+    title:gv('proj-title'),place:gv('proj-location'),client:gv('proj-client'),
+    dept:gv('proj-dept'),author:gv('proj-person'),
+    created:gv('proj-created'),updated:gv('proj-updated'),note:gv('proj-note')
+  };
+  const axis={
+    unit:gv('axis-type')||'quarter',
+    startYear:parseInt((gv('start-fy').match(/\d+/)||['2024'])[0])||2024,
+    numYears:parseInt(gv('fy-count'))||8
+  };
+  const data={version:'gantt_v13',savedAt:new Date().toISOString(),meta,axis,rows:collectRows()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const titleSlug=(meta.title||'行程表').replace(/[\\/:*?"<>|]/g,'_').slice(0,30);
+  const dateStr=new Date().toISOString().slice(0,10).replace(/-/g,'');
+  a.download=`${titleSlug}_${dateStr}.json`;a.href=url;a.click();
+  URL.revokeObjectURL(url);
+}
+function loadFromFile(){
+  const input=document.createElement('input');
+  input.type='file';input.accept='.json,application/json';
+  input.onchange=function(e){
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        const data=JSON.parse(ev.target.result);
+        if(data.version!=='gantt_v13'){alert('このファイルは対応していない形式です');return;}
+        const m=data.meta||{};
+        const setVal=(id,v)=>{const el=document.getElementById(id);if(el)el.value=(v==null?'':v);};
+        setVal('proj-title',m.title);setVal('proj-location',m.place);
+        setVal('proj-client',m.client);setVal('proj-dept',m.dept);
+        setVal('proj-person',m.author);setVal('proj-created',m.created);
+        setVal('proj-updated',m.updated);setVal('proj-note',m.note);
+        const ax=data.axis||{};
+        setVal('axis-type',ax.unit);setVal('start-fy',ax.startYear);setVal('fy-count',ax.numYears);
+        if(data.rows&&Array.isArray(data.rows))loadRows(data.rows);
+        if(typeof buildLegend==='function')buildLegend();
+        alert('読み込みました');
+      }catch(err){alert('ファイルの読み込みに失敗しました: '+err.message);}
+    };
+    reader.readAsText(file,'utf-8');
+  };
+  input.click();
+}
+
+// =====================================================================
+// DrawingML図形XML生成
+// =====================================================================
+
+function buildSheet1(cols, rows, meta, outTitle){
+  const TQ=cols.length;
+  const C_LV1=1,C_LV2=2,C_LV3=3,C_SUB=4,C_MEMO=5,C_Q0=6;
+  const qw=TQ<=24?6.0:TQ<=36?4.5:3.2;
+  const lastCol=colName(C_Q0+TQ-1);
+  
+  const shapeXmls=[];
+  let sid=2;
+  const merges=[];
+  const rowXmls=[];
+  const rowHeights=[0,28,14,16,13]; // 1-indexed, row 1-4
+
+  // cols定義
+  const colsXml=`<cols>
+<col min="1" max="1" width="6" customWidth="1"/>
+<col min="2" max="2" width="8" customWidth="1"/>
+<col min="3" max="3" width="22" customWidth="1"/>
+<col min="4" max="4" width="14" customWidth="1"/>
+<col min="5" max="5" width="12" customWidth="1"/>
+<col min="${C_Q0}" max="${C_Q0+TQ-1}" width="${qw}" customWidth="1"/>
+</cols>`;
+
+  // 行1: タイトル
+  rowXmls.push(`<row r="1" ht="22" customHeight="1">${makeCell('A1','■ '+meta.title,S.TITLE)}</row>`);
+  // 行2: 副題
+  rowXmls.push(`<row r="2" ht="14" customHeight="1">${makeCell('A2',outTitle+'　　発注者:'+meta.client+'　担当:'+meta.dept+' '+meta.person+'　更新:'+meta.updated,S.SUBTITLE)}</row>`);
+  
+  // 行3: 年度ヘッダー
+  let r3='';
+  r3+=makeCell('A3','大項目',S.HDR_NORM);
+  r3+=makeCell('B3','中項目',S.HDR_NORM);
+  r3+=makeCell('C3','小項目',S.HDR_NORM);
+  r3+=makeCell('D3','種別',S.HDR_NORM);
+  r3+=makeCell('E3','摘要',S.HDR_NORM);
+  cols.forEach((cd,i)=>{
+    r3+=makeCell(colName(C_Q0+i)+'3', cd.is_fy_start?cd.fy:'', cd.is_fy_start?S.HDR_FY_FIRST:S.HDR_FY);
+  });
+  rowXmls.push(`<row r="3" ht="16" customHeight="1">${r3}</row>`);
+  
+  // 行4: 期別ヘッダー
+  let r4='';
+  r4+=makeCell('A4','',S.PRD_BLANK);r4+=makeCell('B4','',S.PRD_BLANK);
+  r4+=makeCell('C4','',S.PRD_BLANK);r4+=makeCell('D4','',S.PRD_BLANK);
+  r4+=makeCell('E4','',S.PRD_BLANK);
+  cols.forEach((cd,i)=>{
+    r4+=makeCell(colName(C_Q0+i)+'4', cd.period, cd.is_fy_start?S.PRD_FIRST:S.PRD_NORM);
+  });
+  rowXmls.push(`<row r="4" ht="13" customHeight="1">${r4}</row>`);
+
+  // データ行
+  let er=5;
+  let lv1Blocks=[],lv2Blocks=[];
+  let cL1S=null,cL1T='',cL2S=null,cL2T='';
+  const ROW_H=20;
+
+  const fL1=(end)=>{if(cL1S!==null&&cL1T)lv1Blocks.push({s:cL1S,e:end-1,t:cL1T});cL1S=null;cL1T='';};
+  const fL2=(end)=>{if(cL2S!==null&&cL2T)lv2Blocks.push({s:cL2S,e:end-1,t:cL2T});cL2S=null;cL2T='';};
+
+  for(const rd of rows){
+    rowHeights.push(ROW_H);
+    if(rd.type==='spacer'){
+      fL1(er);fL2(er);
+      let rsp='';
+      for(let c=1;c<C_Q0+TQ;c++) rsp+=`<c r="${colName(c)}${er}" s="${S.SPACER}"/>`;
+      rowXmls.push(`<row r="${er}" ht="${ROW_H}" customHeight="1">${rsp}</row>`);
+      er++;continue;
+    }
+    const lv=rd.level||'lv2';
+    const isMil=(rd.type==='milestone');
+    const inL1=cL1S!==null,inL2=cL2S!==null;
+
+    // 大中小列スタイル決定
+    let sLV1,sLV2,sLV3Task,sLV3Sub,sLV3Memo;
+    if(lv==='lv1'){
+      fL1(er);fL2(er);cL1S=er;cL1T=rd.task;
+      sLV1=S.LV1_BLANK;sLV2=S.LV1_BLANK;sLV3Task=S.LV1_BLANK;
+      sLV3Sub=S.LV1_SUB;sLV3Memo=S.LV1_MEMO;
+    }else if(lv==='lv2'){
+      sLV1=inL1?S.LV1_BLANK:S.GANTT_NORM;
+      fL2(er);cL2S=er;cL2T=isMil?('◆ '+rd.task):rd.task;
+      sLV2=isMil?S.MS_BLANK:S.LV2_BLANK;sLV3Task=isMil?S.MS_BLANK:S.LV2_BLANK;
+      sLV3Sub=isMil?S.MS_SUB:S.LV2_SUB;sLV3Memo=isMil?S.MS_MEMO:S.LV2_MEMO;
+    }else{
+      sLV1=inL1?S.LV1_BLANK:S.GANTT_NORM;
+      sLV2=inL2?S.LV2_BLANK:S.GANTT_NORM;
+      sLV3Task=S.LV3_TEXT;
+      sLV3Sub=S.LV2_SUB;sLV3Memo=S.LV2_MEMO;
+    }
+
+    let rdat='';
+    // lv1/lv2の先頭行にテキストを直接書く（後でreplaceは不要）
+    const isLv1Start=(lv==='lv1');
+    const isLv2Start=(lv==='lv2'||isMil);
+    rdat+=makeCell(colName(C_LV1)+er, isLv1Start?rd.task:'', isLv1Start?S.LV1_TEXT:sLV1);
+    rdat+=makeCell(colName(C_LV2)+er, isLv2Start?(isMil?('◆ '+rd.task):rd.task):'', isLv2Start?(isMil?S.MS_TEXT:S.LV2_TEXT):sLV2);
+    // lv3セルはテキストを書くか空か
+    // C列(業務内容統合: lv3は小項目名、lv2・MSはタスク名、lv1は空)
+    if(lv==='lv3'){
+      rdat+=makeCell(colName(C_LV3)+er,rd.task,S.LV3_TEXT);
+    }else if(lv==='lv1'){
+      rdat+=makeCell(colName(C_LV3)+er,'',S.LV1_BLANK);
+    }else{
+      const taskVal=(isMil?'◆ ':'')+rd.task;
+      const taskS=isMil?S.MS_TASK:S.LV2_TASK;
+      rdat+=makeCell(colName(C_LV3)+er,taskVal,taskS);
+    }
+    // 種別
+    const subS=lv==='lv1'?S.LV1_SUB:isMil?S.MS_SUB:S.LV2_SUB;
+    rdat+=makeCell(colName(C_SUB)+er,rd.sub||'',subS);
+    // 摘要
+    const memoS=lv==='lv1'?S.LV1_MEMO:isMil?S.MS_MEMO:S.LV2_MEMO;
+    rdat+=makeCell(colName(C_MEMO)+er,rd.memo||'',memoS);
+
+    // 図形収集 & ガントセル（1回のみ書き込み）
+    const barRanges=[];
+    for(const bar of (rd.bars||[])){
+      if(!bar.start)continue;
+      const fh=getBarHex(bar);
+      const lh=getBarLineHex(bar);
+      const sObj=SM[bar.shape]||SM['roundRect'];
+      const wObj=WM[bar.width]||WM['mid'];
+      const isMsSym=!!sObj.sym;
+      const isDash=bar.shape==='dash';
+      const {from,to}=dateToColRange(bar.start,bar.end||bar.start,cols);
+      if(from===0)continue;
+      barRanges.push({from,to,fh,lh,isMsSym,isDash,sObj,wObj,cp:rd.cp});
+      // 図形
+      const prst=sObj.prst||'roundRect';
+      const a1=sObj.a1||null,a2=sObj.a2||null;
+      const ratio=wObj.v==='thin'?0.42:wObj.v==='thick'?0.82:0.65;
+      const cf0=C_Q0+from-2; const ct0=C_Q0+to-1;
+      const rf0=er-1; const rt0=er;
+      const label=(lv!=='lv1'&&!isMsSym)?rd.task:'';
+      const tcColor=['9DC3E6','FFB800','6FA8D0'].includes(fh)?'333333':'FFFFFF';
+      shapeXmls.push(makeShapeXml(sid++,`s${sid}`,cf0,rf0,ct0,rt0,fh,lh,label,prst,a1,a2,isDash,ROW_H,ratio,tcColor,600,rd.cp));
+    }
+
+    // ガントセル（1ループで確定）
+    for(let qi=0;qi<TQ;qi++){
+      const q=qi+1;
+      const isFyS=cols[qi].is_fy_start;
+      const hit=barRanges.find(b=>q>=b.from&&q<=b.to);
+      const sGantt=isFyS?S.GANTT_FY:S.GANTT_NORM;
+      let sCp=0;
+      if(rd.cp&&hit){
+        if(q===hit.from&&q===hit.to) sCp=S.CP_ALL;
+        else if(q===hit.from) sCp=S.CP_FIRST;
+        else if(q===hit.to) sCp=S.CP_LAST;
+        else sCp=S.CP_MID;
+      }
+      rdat+=makeCell(colName(C_Q0+qi)+er,'',sCp||sGantt);
+    }
+    rowXmls.push(`<row r="${er}" ht="${ROW_H}" customHeight="1">${rdat}</row>`);
+    er++;
+  }
+  fL1(er);fL2(er);
+
+  // マージセル（年度グループ・lv1縦結合・lv2縦結合）
+  const mergeXmls=[];
+  // 年度グループのマージ（行3: 年度ヘッダー）
+  let fyStart=0;
+  cols.forEach((cd,i)=>{
+    if(cd.is_fy_start){
+      if(fyStart>=0 && i-fyStart>0)
+        mergeXmls.push(`<mergeCell ref="${colName(C_Q0+fyStart)}3:${colName(C_Q0+i-1)}3"/>`);
+      fyStart=i;
+    }
+  });
+  if(cols.length-1>fyStart)
+    mergeXmls.push(`<mergeCell ref="${colName(C_Q0+fyStart)}3:${colName(C_Q0+cols.length-1)}3"/>`);
+  lv1Blocks.forEach(b=>{
+    if(b.e>b.s){
+      mergeXmls.push(`<mergeCell ref="${colName(C_LV1)}${b.s}:${colName(C_LV1)}${b.e}"/>`);
+      merges.push({r:b.s,c:C_LV1,text:b.t,s:S.LV1_TEXT});
+    }
+  });
+  lv2Blocks.forEach(b=>{
+    if(b.e>b.s){
+      mergeXmls.push(`<mergeCell ref="${colName(C_LV2)}${b.s}:${colName(C_LV2)}${b.e}"/>`);
+      merges.push({r:b.s,c:C_LV2,text:b.t,s:S.LV2_TEXT});
+    }
+  });
+
+  // マージセルのテキストをrowXmlsに書き込む
+  // （既存のblankセルを上書き — XMLなので最初から正しい値で書く）
+  // → rowXmlsを後から修正するより、lv1/lv2のテキストを最初から埋め込む方が確実
+  // → 上記のrdat内でlv1Blocks/lv2Blocksを見てテキストを書く
+  // ただしmergeの開始行だけに書く → 以降の行は空のまま
+  // 実装: cL1S/cL2Sの行でテキストを書く（現在は''を書いている）
+  // → 修正: lv1/lv2の最初の行でテキストを書く
+
+  const mergeCount=mergeXmls.length;
+  const mergeSect=mergeCount>0
+    ?`<mergeCells count="${mergeCount}">${mergeXmls.join('')}</mergeCells>`
+    :'';
+
+  const drwRels=shapeXmls.length>0?'<drawing r:id="rId_drw"/>'  :'';
+
+  const sheetXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="${MSNS}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheetPr/><dimension ref="A1:${lastCol}${er-1}"/>
+<sheetViews><sheetView workbookViewId="0"/></sheetViews>
+<sheetFormatPr defaultRowHeight="15" customHeight="1"/>
+${colsXml}
+<sheetData>${rowXmls.join('')}</sheetData>
+${mergeSect}
+<pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5"/>
+<pageSetup orientation="landscape" paperSize="8" fitToWidth="1"/>
+${drwRels}
+</worksheet>`;
+
+  return {sheetXml, shapeXmls};
+}
+
+function getBarHex(bar){
+  const c=bar.color||'blue';
+  if(c==='custom')return(bar.customHex||'4472C4');
+  if(c==='gold')return'B8860B';
+  return(CM[c]||CM['blue']).h;
+}
+function getBarLineHex(bar){
+  const c=bar.color||'blue';
+  if(c==='custom')return'555555';
+  if(c==='gold')return'7B5A00';
+  return(CM[c]||CM['blue']).lh||'555555';
+}
+
+function makeShapeXml(sid,name,cf0,rf0,ct0,rt0,fh,lh,text,prst,a1,a2,dashed,rhPt,ratio,tc,fsz,cp){
+  const mg=Math.round(rhPt*12700*(1-ratio)/2);
+  const lw=cp?22225:12700; const lc=cp?'C00000':lh;
+  const dsh=dashed?'<a:prstDash val="sysDash"/>':'<a:prstDash val="solid"/>';
+  let avlst='<a:avLst/>';
+  if(a1!==null&&a1!==undefined&&a2!==null&&a2!==undefined)
+    avlst=`<a:avLst><a:gd name="adj1" fmla="val ${a1}"/><a:gd name="adj2" fmla="val ${a2}"/></a:avLst>`;
+  const te=xe(text||'');
+  const tbody=te?`<xdr:txBody><a:bodyPr anchor="ctr" anchorCtr="1"/><a:lstStyle/><a:p><a:pPr algn="ctr" marL="60960" marR="60960"/><a:r><a:rPr lang="ja-JP" sz="${fsz}" dirty="0"><a:solidFill><a:srgbClr val="${tc}"/></a:solidFill><a:latin typeface="Meiryo" pitchFamily="18" charset="-128"/></a:rPr><a:t>${te}</a:t></a:r></a:p></xdr:txBody>`
+    :'<xdr:txBody><a:bodyPr/><a:lstStyle/><a:p/></xdr:txBody>';
+  return `<xdr:twoCellAnchor editAs="absolute"><xdr:from><xdr:col>${cf0}</xdr:col><xdr:colOff>15000</xdr:colOff><xdr:row>${rf0}</xdr:row><xdr:rowOff>${mg}</xdr:rowOff></xdr:from><xdr:to><xdr:col>${ct0}</xdr:col><xdr:colOff>-15000</xdr:colOff><xdr:row>${rt0}</xdr:row><xdr:rowOff>${-mg}</xdr:rowOff></xdr:to><xdr:sp macro="" textlink=""><xdr:nvSpPr><xdr:cNvPr id="${sid}" name="${xe(name)}"/><xdr:cNvSpPr><a:spLocks noGrp="1"/></xdr:cNvSpPr></xdr:nvSpPr><xdr:spPr bwMode="auto"><a:xfrm><a:off x="0" y="0"/><a:ext cx="1" cy="1"/></a:xfrm><a:prstGeom prst="${prst}">${avlst}</a:prstGeom><a:solidFill><a:srgbClr val="${fh}"/></a:solidFill><a:ln w="${lw}"><a:solidFill><a:srgbClr val="${lc}"/></a:solidFill>${dsh}</a:ln></xdr:spPr>${tbody}</xdr:sp><xdr:clientData/></xdr:twoCellAnchor>`;
+}
+
+async function downloadExcel(){
+  const msg=document.getElementById('dl-msg');
+  msg.innerHTML='<span class="msg-ok">⏳ 生成中...</span>';
+  try{
+    const cols=getAxisCols();
+    const rows=collectRows();
+    const meta={
+      title:document.getElementById('proj-title').value.trim(),
+      location:document.getElementById('proj-location').value.trim(),
+      client:document.getElementById('proj-client').value.trim(),
+      dept:document.getElementById('proj-dept').value.trim(),
+      person:document.getElementById('proj-person').value.trim(),
+      created:document.getElementById('proj-created').value,
+      updated:document.getElementById('proj-updated').value,
+      note:document.getElementById('proj-note').value.trim(),
+    };
+    const cd=new Date(meta.created||new Date());
+    const outTitle='区画整理事業行程表　　作成日　'+cd.getFullYear()+'年'+(cd.getMonth()+1)+'月'+cd.getDate()+'日現在';
+
+    let sheetXml,shapeXmls;
+    try{
+      const r=buildSheet1(cols,rows,meta,outTitle);
+      sheetXml=r.sheetXml; shapeXmls=r.shapeXmls;
+    }catch(buildErr){
+      console.error('buildSheet1 error:',buildErr);
+      msg.innerHTML='<span class="msg-err">❌ 生成エラー: '+buildErr.message+'</span>';
+      return;
+    }
+
+    // 基礎情報シート（簡易版）
+    const sheet2Xml=buildSheet2(meta,outTitle);
+
+    // Drawing XML
+    const _XDR="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing";
+    const _ANS="http://schemas.openxmlformats.org/drawingml/2006/main";
+    const drawingXml=shapeXmls.length>0
+      ?`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<xdr:wsDr xmlns:xdr="${_XDR}" xmlns:a="${_ANS}">\n${shapeXmls.join('\n')}\n</xdr:wsDr>`
+      :'';
+
+    // Sheet1.xml.rels
+    const sheet1Rels=drawingXml?`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId_drw" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing_gantt.xml"/></Relationships>`:'';
+
+    // Content-Types
+    const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>${drawingXml?'<Override PartName="/xl/drawings/drawing_gantt.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>':''}</Types>`;
+
+    const wbXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="${MSNS}"><workbookPr/><workbookProtection/><bookViews><workbookView visibility="visible" minimized="0" showHorizontalScroll="1" showVerticalScroll="1" showSheetTabs="1" tabRatio="600" firstSheet="0" activeTab="0" autoFilterDateGrouping="1"/></bookViews><sheets><sheet xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" name="行程表" sheetId="1" state="visible" r:id="rId1"/><sheet xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" name="基礎情報" sheetId="2" state="visible" r:id="rId2"/></sheets><definedNames/><calcPr calcId="124519" fullCalcOnLoad="1"/></workbook>`;
+    const wbRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="/xl/worksheets/sheet1.xml" Id="rId1"/><Relationship Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="/xl/worksheets/sheet2.xml" Id="rId2"/><Relationship Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml" Id="rId3"/><Relationship Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml" Id="rId4"/></Relationships>`;
+    const now=new Date().toISOString().replace(/\.\d+Z$/,'Z');
+    const coreXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"><dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">${xe(meta.person||'作成者')}</dc:creator><dcterms:created xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="dcterms:W3CDTF">${now}</dcterms:modified></cp:coreProperties>`;
+
+    // JSZipで組み立て
+    const zip=new JSZip();
+    zip.file('[Content_Types].xml', ct);
+    zip.file('_rels/.rels', RELS_XML);
+    zip.file('docProps/app.xml', APP_XML);
+    zip.file('docProps/core.xml', coreXml);
+    zip.file('xl/workbook.xml', wbXml);
+    zip.file('xl/_rels/workbook.xml.rels', wbRels);
+    zip.file('xl/styles.xml', STYLES_XML);
+    zip.file('xl/theme/theme1.xml', THEME_XML);
+    zip.file('xl/worksheets/sheet1.xml', sheetXml);
+    zip.file('xl/worksheets/sheet2.xml', sheet2Xml);
+    if(drawingXml){
+      zip.file('xl/drawings/drawing_gantt.xml', drawingXml);
+      zip.file('xl/worksheets/_rels/sheet1.xml.rels', sheet1Rels);
+    }
+
+    const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;
+    const fn='行程表_'+(meta.title||'出力').replace(/[\\/:*?"<>|]/g,'_').slice(0,30)+'.xlsx';
+    a.download=fn;a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
+    msg.innerHTML='<span class="msg-ok">✅ ダウンロード完了：'+fn+'　（図形: '+shapeXmls.length+'個）</span>';
+  }catch(e){
+    console.error(e);
+    msg.innerHTML='<span class="msg-err">❌ エラー: '+e.message+'</span>';
+  }
+}
+
+function buildSheet2(meta,outTitle){
+  const HDR='<c r="__REF__" s="3" t="inlineStr"><is><t>__VAL__</t></is></c>';
+  const VAL='<c r="__REF__" s="19" t="inlineStr"><is><t>__VAL__</t></is></c>';
+  function hRow(r,lb,vl){return `<row r="${r}" ht="16" customHeight="1">${makeCell('A'+r,lb,3)}${makeCell('B'+r,vl||'',19)}</row>`;}
+  const rows2=[
+    hRow(2,'事業名',meta.title),hRow(3,'業務場所',meta.location),
+    hRow(4,'発注者名',meta.client),hRow(5,'担当部署',meta.dept),
+    hRow(6,'担当者名',meta.person),hRow(7,'作成日',meta.created),
+    hRow(8,'更新日',meta.updated),hRow(9,'注記',meta.note),
+  ];
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="${MSNS}"><sheetFormatPr defaultRowHeight="15"/>
+<cols><col min="1" max="1" width="18" customWidth="1"/><col min="2" max="2" width="65" customWidth="1"/></cols>
+<sheetData>
+<row r="1" ht="22" customHeight="1">${makeCell('A1','■ 行程表 基礎情報',S.TITLE)}</row>
+${rows2.join('')}
+</sheetData>
+</worksheet>`;
+}
+
+
+// サンプル
+function openPreview_unused(){
+  const cols=getAxisCols();
+  const rows=collectRows();
+  const meta={
+    title:document.getElementById('proj-title').value.trim(),
+    location:document.getElementById('proj-location').value.trim(),
+    client:document.getElementById('proj-client').value.trim(),
+    dept:document.getElementById('proj-dept').value.trim(),
+    person:document.getElementById('proj-person').value.trim(),
+    created:document.getElementById('proj-created').value,
+    updated:document.getElementById('proj-updated').value,
+    note:document.getElementById('proj-note').value.trim(),
+  };
+  const axis={
+    type:document.getElementById('axis-type').value,
+    start_fy:document.getElementById('start-fy').value.trim(),
+    start_date:document.getElementById('start-date').value,
+    fy_count:parseInt(document.getElementById('fy-count').value),
+  };
+  const payload={meta,axis,rows};
+  // gantt_preview.htmlを新しいタブで開き、postMessageでデータ送信
+  const win=window.open('gantt_preview.html','_blank');
+  if(!win){alert('ポップアップがブロックされました。ブラウザの設定でポップアップを許可してください。');return;}
+  win.addEventListener('load',()=>{
+    win.postMessage({type:'gantt-data',payload},'*');
+  });
+}
+
+function loadSample(){
+  saveUndo();document.getElementById('tbody').innerHTML='';rid=0;
+  [
+    {type:'task',level:'lv1',task:'庁内調整',bars:[{start:'2024-04-01',end:'2031-03-31',color:'lblue',shape:'rect',width:'mid'}]},
+    {type:'spacer'},
+    {type:'task',level:'lv1',task:'準備会・協議等',bars:[
+      {start:'2024-04-01',end:'2025-09-30',color:'orange',shape:'rect',width:'mid'},
+      {start:'2026-10-01',end:'2027-03-31',color:'orange',shape:'rect',width:'mid'},
+      {start:'2028-04-01',end:'2028-09-30',color:'orange',shape:'rect',width:'mid'},
+    ]},
+    {type:'task',level:'lv2',task:'計画協議（県）',bars:[{start:'2026-04-01',end:'2027-09-30',color:'orange',shape:'arrow_md',width:'mid'}],cp:true,memo:'事前協議'},
+    {type:'task',level:'lv2',task:'都市計画変更案作成',sub:'地区計画・用途地域・公園',bars:[{start:'2026-04-01',end:'2027-12-31',color:'orange',shape:'arrow_md',width:'mid'}]},
+    {type:'task',level:'lv3',task:'地区計画策定',bars:[{start:'2026-04-01',end:'2027-06-30',color:'orange',shape:'roundRect',width:'thin'}]},
+    {type:'milestone',level:'lv2',task:'都市計画決定',sub:'R9年度末',bars:[{start:'2027-12-31',end:'2027-12-31',color:'gold',shape:'diamond',width:'mid'}],cp:true,memo:'重要MS'},
+    {type:'task',level:'lv2',task:'事業計画決定・認可',bars:[{start:'2028-01-01',end:'2028-09-30',color:'orange',shape:'arrow_md',width:'mid'}],cp:true},
+    {type:'milestone',level:'lv2',task:'事業認可取得',sub:'R10年度',bars:[{start:'2028-09-30',end:'2028-09-30',color:'red',shape:'circle',width:'mid'}],cp:true},
+    {type:'spacer'},
+    {type:'task',level:'lv1',task:'調査・設計',bars:[{start:'2024-04-01',end:'2026-03-31',color:'blue',shape:'rect',width:'mid'}]},
+    {type:'task',level:'lv2',task:'事業計画・換地概計',bars:[{start:'2026-04-01',end:'2027-12-31',color:'blue',shape:'arrow_md',width:'mid'}],cp:true},
+    {type:'task',level:'lv2',task:'詳細設計',sub:'道路・電水・下水等',bars:[{start:'2029-04-01',end:'2030-09-30',color:'blue',shape:'arrow_md',width:'mid'}],cp:true},
+    {type:'task',level:'lv3',task:'予備設計',bars:[{start:'2028-01-01',end:'2028-09-30',color:'blue',shape:'roundRect',width:'thin'}]},
+    {type:'task',level:'lv3',task:'工事発注設計（予定）',bars:[{start:'2029-07-01',end:'2030-03-31',color:'blue',shape:'dash',width:'thin'}]},
+    {type:'spacer'},
+    {type:'task',level:'lv1',task:'権利者対応',bars:[{start:'2024-04-01',end:'2031-03-31',color:'pink',shape:'rect',width:'mid'}]},
+    {type:'task',level:'lv2',task:'説明会・意見交換',bars:[{start:'2026-04-01',end:'2031-03-31',color:'pink',shape:'arrow_lg',width:'mid'}],memo:'随時'},
+    {type:'task',level:'lv2',task:'仮換地指定・供覧',bars:[{start:'2030-01-01',end:'2030-09-30',color:'yellow',shape:'arrow_md',width:'mid'}],cp:true},
+    {type:'milestone',level:'lv2',task:'仮換地指定',sub:'R12年度',bars:[{start:'2030-01-01',end:'2030-01-01',color:'gold',shape:'star5',width:'mid'}],cp:true},
+  ].forEach(r=>addRow(r.type||'task',r.level||'lv2',r));
+}
+
+const today=new Date().toISOString().slice(0,10);
+document.getElementById('proj-created').value=today;
+document.getElementById('proj-updated').value=today;
+buildLegend();loadSample();
+
+(function(){
+  const panel=document.getElementById('style-panel');
+  const handle=document.getElementById('panel-head');
+  let drag=false,ox=0,oy=0;
+  handle.addEventListener('mousedown',e=>{drag=true;const r=panel.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;e.preventDefault();});
+  document.addEventListener('mousemove',e=>{if(!drag)return;let x=Math.max(0,Math.min(e.clientX-ox,window.innerWidth-panel.offsetWidth));let y=Math.max(0,Math.min(e.clientY-oy,window.innerHeight-panel.offsetHeight));panel.style.left=x+'px';panel.style.top=y+'px';});
+  document.addEventListener('mouseup',()=>{drag=false;});
+})();
+
+// ===== 行程表プレビュー（統合版） =====
+const PV_MS_SHAPES_SET=new Set(['diamond','star5','circle','square_ms','triangle','diamond_o','circle_o','square_o','star_o']);
+const PV_MS_SYMS={diamond:'◆',star5:'★',circle:'●',square_ms:'■',triangle:'▲',diamond_o:'◇',circle_o:'〇',square_o:'□',star_o:'☆'};
+const PV_BAR_ARROW=new Set(['arrow_sm','arrow_md','arrow_lg','home']);
+const PV_CMAP={orange:'F5B97A',blue:'7AB8E8',dkgreen:'6FCF97',lblue:'A8D5F5',pink:'F7A8CC',yellow:'F7E07A',gray:'B0BEC5',red:'F08080',green:'81E6A8',purple:'C39BD3',gold:'F0D060'};
+function pvGetHex(bar){if(!bar)return'4472C4';if(bar.color==='custom')return(bar.customHex||'4472C4');return PV_CMAP[bar.color]||'4472C4';}
+function pvDateToRange(s,e,cols){
+  if(!s)return{from:0,to:0};
+  // ISO文字列をローカル日付(local midnight)に変換してcolsの日付と単位を合わせる
+  const toLocal=str=>{const d=new Date(str);return new Date(d.getFullYear(),d.getMonth(),d.getDate());};
+  const sd=toLocal(s),ed=e?toLocal(e):sd;let from=0,to=0;
+  cols.forEach((c,i)=>{if(c.startDate<=sd&&sd<=c.endDate&&from===0)from=i+1;if(c.startDate<=ed&&ed<=c.endDate)to=i+1;});
+  if(from===0)for(let i=0;i<cols.length;i++)if(sd<=cols[i].endDate){from=i+1;break;}
+  if(to===0)to=from;return{from,to};
+}
+function getAxisColsFromAxis(axis){
+  const tp=axis.type||'quarter',fyc=axis.fy_count||8;
+  // 西暦入力 → 令和年度（西暦-2018=令和年度）
+  const startSeireki=parseInt(((axis.start_fy||'2024').match(/\d+/)||['2024'])[0]);
+  const rb=startSeireki-2018;
+  const sd=new Date(axis.start_date||'2024-04-01'),sy=sd.getFullYear();
+  const cols=[],p=(fy,pd,fs,s,e)=>cols.push({fy,period:pd,is_fy_start:fs,startDate:s,endDate:e});
+  for(let i=0;i<fyc;i++){
+    const fy=`R${rb+i}(${sy+i})`,y=sy+i;
+    if(tp==='quarter'){p(fy,'1/4',true,new Date(y,3,1),new Date(y,5,30));p(fy,'2/4',false,new Date(y,6,1),new Date(y,8,30));p(fy,'3/4',false,new Date(y,9,1),new Date(y,11,31));p(fy,'4/4',false,new Date(y+1,0,1),new Date(y+1,2,31));}
+    else if(tp==='half'){p(fy,'上半期',true,new Date(y,3,1),new Date(y,8,30));p(fy,'下半期',false,new Date(y,9,1),new Date(y+1,2,31));}
+    else if(tp==='year'){p(fy,'',true,new Date(y,3,1),new Date(y+1,2,31));}
+    else{['4月','5月','6月','7月','8月','9月','10月','11月','12月','1月','2月','3月'].forEach((m,j)=>{const mo=j<9?j+3:j-9,yr=j<9?y:y+1;p(fy,m,j===0,new Date(yr,mo,1),new Date(yr,mo+1,0));});}
+  }
+  return cols;
+}
+function printPreview(){
+  const tbl=document.getElementById('pv-gantt-tbl');
+  if(!tbl||!tbl.rows.length){
+    alert('先に「行程表プレビュー / 印刷」ボタンを押してください');return;
+  }
+
+  const old=document.getElementById('print-root');
+  if(old)old.remove();
+
+  const root=document.createElement('div');
+  root.id='print-root';
+  root.style.cssText='position:relative;display:inline-block;';
+
+  // テーブルをクローン
+  const tblClone=tbl.cloneNode(true);
+  tblClone.style.cssText='border-collapse:separate;border-spacing:0;width:auto;';
+
+  // gcセルのスタイルをリセット・縦線はbox-shadow(inset)で描画
+  tblClone.querySelectorAll('td.gc').forEach(function(td){
+    td.style.cssText='';
+    td.style.border='none';
+    td.style.backgroundImage='none';
+    td.style.backgroundColor='#fff';
+    td.style.boxShadow='inset -1px 0 0 #e8e8e8';
+    td.style.position='relative';
+    td.style.overflow='visible';
+    td.style.padding='0';
+  });
+
+  // gcセルの横線をJSで設定
+  tblClone.querySelectorAll('tr').forEach(function(tr){
+    const inner =tr.classList.contains('lv1-inner');
+    const notop =tr.classList.contains('lv1-notop');
+    const isLast=tr.classList.contains('tbl-last');
+    const isEnd =tr.classList.contains('lv1-end');
+    const BDR='1px solid #e8e8e8';
+
+    tr.querySelectorAll('td.gc').forEach(function(td){
+      if(isLast){
+        td.style.borderBottom=BDR;
+      }else if(inner&&notop){
+        // 横線なし
+      }else if(inner){
+        td.style.borderTop=BDR;
+      }else if(notop||isEnd){
+        td.style.borderBottom=BDR;
+      }else{
+        td.style.borderTop=BDR;
+        td.style.borderBottom=BDR;
+      }
+    });
+  });
+
+  root.appendChild(tblClone);
+
+  // SVGコネクタをクローン
+  const svg=document.getElementById('pv-connector-svg');
+  if(svg){
+    const svgClone=svg.cloneNode(true);
+    svgClone.style.cssText='position:absolute;top:0;left:0;pointer-events:none;';
+    root.appendChild(svgClone);
+  }
+
+  // テキストボックス・吹き出しをクローン
+  const wrap=document.getElementById('pv-gantt-wrap');
+  if(wrap){
+    wrap.querySelectorAll('.pv-textbox,.pv-callout').forEach(function(el){
+      const clone=el.cloneNode(true);
+      clone.querySelectorAll('.box-close,.box-resize').forEach(function(x){x.remove();});
+      root.appendChild(clone);
+    });
+  }
+
+  document.body.appendChild(root);
+
+  // A3に縦横等倍でフィット（zoom計算）
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const rW=root.offsetWidth;
+    const rH=root.offsetHeight;
+    // A3横 印刷可能域: 400mm×277mm → px換算(96dpi: 1mm=3.7795px)
+    const printW=400*3.7795;
+    const printH=277*3.7795;
+    // 縦横比維持・用紙に収まる最大スケール
+    const scale=Math.min(printW/rW, printH/rH, 1.0);
+    root.style.zoom=String(scale);
+    root.style.transformOrigin='top left';
+
+    const rawTitle=document.getElementById('proj-title').value.trim()||'行程表';
+    const safeTitle=rawTitle.replace(/[\\/:*?"<>|]/g,'_');
+    const orig=document.title;
+    document.title=safeTitle;
+
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      window.print();
+      document.title=orig;
+      root.remove();
+    }));
+  }));
+}
+function closePreview(){document.getElementById('pv-overlay').style.display='none';}
+function toggleBarText(show){
+  const wrap=document.getElementById('pv-gantt-wrap');
+  if(!wrap)return;
+  wrap.querySelectorAll('.bar-lbl').forEach(el=>{el.style.display=show?'':'none';});
+}
+function showPreview(){
+  const rows=collectRows();
+  const meta={title:document.getElementById('proj-title').value.trim(),location:document.getElementById('proj-location').value.trim(),client:document.getElementById('proj-client').value.trim(),dept:document.getElementById('proj-dept').value.trim(),person:document.getElementById('proj-person').value.trim(),created:document.getElementById('proj-created').value,updated:document.getElementById('proj-updated').value,note:document.getElementById('proj-note').value.trim()};
+  const axis={type:document.getElementById('axis-type').value,start_fy:document.getElementById('start-fy').value.trim(),start_date:document.getElementById('start-date').value,fy_count:parseInt(document.getElementById('fy-count').value)};
+  buildTable({meta,axis,rows});
+  // A3フィットをデフォルト: テーブル描画後に時間軸に関わらずA3幅に自動収縮
+  setTimeout(()=>{
+    const sel=document.getElementById('pv-zoom-sel');
+    setZoom(sel?sel.value:'a3');
+  },50);
+  const ov=document.getElementById('pv-overlay');
+  ov.style.display='block';ov.scrollTop=0;
+}
+function buildTable(data){
+  const{meta,axis,rows}=data;
+  const cols=getAxisColsFromAxis(axis);
+  const TQ=cols.length;
+  const tbl=document.getElementById('pv-gantt-tbl');
+  tbl.innerHTML='';
+
+  // ガントセル幅 (CSSカスタムプロパティで設定)
+  const gcW=axis.type==='month'?14:axis.type==='year'?40:axis.type==='half'?24:18;
+  tbl.style.setProperty('--gc-w',gcW+'px');
+
+  const thead=tbl.createTHead();
+  const tbody=tbl.createTBody();
+
+  // 行1: タイトル
+  const r1=thead.insertRow();
+  const td1=r1.insertCell();
+  td1.colSpan=2+TQ;
+  td1.style.cssText='background:#1f4e79;color:#fff;font-size:11px;font-weight:bold;padding:4px 8px;height:28px;';
+  td1.textContent='■ '+(meta.title||'行程表');
+
+  // 行2: 副題
+  const r2=thead.insertRow();
+  const td2=r2.insertCell();
+  td2.colSpan=2+TQ;
+  td2.style.cssText='background:#edf3fb;color:#222;font-size:8px;padding:2px 8px;height:14px;text-align:right;';
+  const cd=new Date(meta.created||new Date());
+  const createdStr=`${cd.getFullYear()}年${cd.getMonth()+1}月${cd.getDate()}日`;
+  // 2行目: 作成日 → 更新日 → 注記 の順で左揃え
+  const metaRow2=[
+    meta.created ? `作成日 ${createdStr}` : '',
+    meta.updated ? `更新日 ${meta.updated}` : '',
+    meta.note    ? `注記：${meta.note}`     : '',
+  ].filter(Boolean).join('　　');
+  td2.textContent=metaRow2;
+
+  // 行3: ヘッダー列名 + 年度
+  const r3=thead.insertRow();
+  ['項目1','項目2'].forEach((lbl,i)=>{
+    const th=document.createElement('th');
+    th.textContent=lbl;
+    th.className=['col-lv1','col-lv2'][i];
+    th.rowSpan=2;
+    th.style.height='29px';
+    r3.appendChild(th);
+  });
+  // 年度ヘッダー（colspan）
+  const fyGroups=[];let pfy='';
+  cols.forEach((c,i)=>{
+    if(c.fy!==pfy){fyGroups.push({fy:c.fy,start:i,count:1});pfy=c.fy;}
+    else fyGroups[fyGroups.length-1].count++;
+  });
+  fyGroups.forEach(fg=>{
+    const th=document.createElement('th');
+    th.textContent=fg.fy;th.colSpan=fg.count;
+    th.className='hdr-fy';th.style.height='16px';
+    r3.appendChild(th);
+  });
+
+  // 行4: 期別ヘッダー
+  const r4=thead.insertRow();
+  cols.forEach(c=>{
+    const td=r4.insertCell();
+    td.textContent=c.period;
+    td.className='hdr-prd'+(c.is_fy_start?' fy-start':'');
+    td.style.height='13px';
+  });
+
+  // データ行
+  // まずlv1/lv2のグループを把握
+  const lv1Groups=[],lv2Groups=[];
+  let cL1={s:-1,e:-1,t:''},cL2={s:-1,e:-1,t:''};
+  let er=0;
+  rows.forEach(rd=>{
+    if(rd.type==='spacer'){
+      if(cL1.s>=0){lv1Groups.push({...cL1,e:er-1});cL1={s:-1,e:-1,t:''};}
+      if(cL2.s>=0){lv2Groups.push({...cL2,e:er-1});cL2={s:-1,e:-1,t:''};}
+      er++;return;
+    }
+    const lv=rd.level||'lv2';
+    const isMil=(rd.type==='milestone');
+    if(lv==='lv1'){
+      if(cL1.s>=0)lv1Groups.push({...cL1,e:er-1});
+      if(cL2.s>=0)lv2Groups.push({...cL2,e:er-1});
+      cL1={s:er,e:er,t:rd.task};cL2={s:-1,e:-1,t:''};
+    }else if(lv==='lv2'||isMil){
+      if(cL2.s>=0)lv2Groups.push({...cL2,e:er-1});
+      cL2={s:er,e:er,t:isMil?('◆ '+rd.task):rd.task};
+    }
+    er++;
+  });
+  if(cL1.s>=0)lv1Groups.push({...cL1,e:er-1});
+  if(cL2.s>=0)lv2Groups.push({...cL2,e:er-1});
+
+  // lv1/lv2マップ
+  const lv1Map={},lv2Map={};
+  lv1Groups.forEach(g=>{for(let i=g.s;i<=g.e;i++){lv1Map[i]=g;}});
+  lv2Groups.forEach(g=>{for(let i=g.s;i<=g.e;i++){lv2Map[i]=g;}});
+
+  // 行生成
+  er=0;
+  const renderedLv1=new Set(),renderedLv2=new Set();
+
+  rows.forEach(rd=>{
+    const tr=tbody.insertRow();
+    if(rd.type==='spacer'){
+      tr.className='row-sp';
+      const td=tr.insertCell();td.colSpan=2+TQ;
+      td.style.cssText='background:#f0f0f0;height:6px;border-color:#ddd;';
+      er++;return;
+    }
+    const lv=rd.level||'lv2';
+    const isMil=(rd.type==='milestone');
+    tr.className='row-'+(isMil?'ms':lv);
+    tr.style.height='var(--row-h)';
+
+    // 項目1（lv1・rowSpan縦結合・上揃え）
+    {
+      const g1=lv1Map[er];
+      if(g1){
+        if(!renderedLv1.has(g1.s)){
+          renderedLv1.add(g1.s);
+          const td=tr.insertCell();td.className='cell-lv1 col-lv1';
+          td.rowSpan=g1.e-g1.s+1;
+          td.textContent=g1.t;
+          td.style.cssText='background:#d6e4f0;font-size:8px;font-weight:bold;color:#1f4e79;text-align:left;vertical-align:top;padding-top:4px;padding-left:4px;white-space:normal;word-break:keep-all;line-height:1.3;';
+          // タスク2: グループ区切り線（後処理で上書きされるが初期値として設定）
+          td.style.setProperty('border-bottom','1px solid var(--border)','important');
+        }
+      }else{
+        const td=tr.insertCell();td.className='cell-lv1 col-lv1';
+        td.style.background='#fff';
+      }
+    }
+
+    // 項目2（lv2・rowSpan縦結合）
+    {
+      const g2=lv2Map[er];
+      if(g2){
+        if(!renderedLv2.has(g2.s)){
+          renderedLv2.add(g2.s);
+          const td=tr.insertCell();td.className='cell-lv2 col-lv2';
+          td.rowSpan=g2.e-g2.s+1;
+          td.textContent=g2.t;
+          // 追加タスクA: 項目2も上揃え（項目1と同様）
+          td.style.cssText='background:#eef4fb;font-size:8px;color:#2e5099;text-align:left;vertical-align:top;padding-top:4px;padding-left:4px;white-space:normal;word-break:keep-all;line-height:1.3;';
+          // タスク2: グループ区切り線（後処理で上書きされるが初期値として設定）
+          td.style.setProperty('border-bottom','1px solid var(--border)','important');
+        }
+      }else{
+        const td=tr.insertCell();td.className='cell-lv2 col-lv2';
+        td.style.background=lv==='lv1'?'#d6e4f0':'#eef4fb';
+      }
+    }
+
+    // 下段テキスト用（種別＋細別）
+    const lowerText=(rd.sub||'')+(rd.memo?'（'+rd.memo+'）':'');
+
+    // ガントセル
+    // バーレンジを事前計算
+    const barRanges=(rd.bars||[]).map(bar=>{
+      if(!bar.start)return null;
+      const fh=pvGetHex(bar);
+      const {from,to}=pvDateToRange(bar.start,bar.end||bar.start,cols);
+      if(from===0)return null;
+      return{from,to,fh,shape:bar.shape||'rect',width:bar.width||'mid',cp:rd.cp};
+    }).filter(Boolean);
+
+    for(let qi=0;qi<TQ;qi++){
+      const q=qi+1;
+      const isFyS=cols[qi].is_fy_start;
+      const tdG=tr.insertCell();
+      tdG.className='gc'+(isFyS?' fy-start':'');
+
+      // このセルに該当するバー
+      const hits=barRanges.filter(b=>q>=b.from&&q<=b.to);
+      if(hits.length===0)continue;
+
+      const bar=hits[0]; // 複数バーの場合は最初を優先（後でz-indexで重ねる）
+      const fh=bar.fh;
+      const isMsSym=PV_MS_SHAPES_SET.has(bar.shape);
+      const isDash=bar.shape==='dash';
+      const isSolid=bar.shape==='solidRect';
+      if((isDash||isSolid)&&q!==bar.from)continue;
+      const isArrow=PV_BAR_ARROW.has(bar.shape);
+      const isRound=bar.shape==='ellipse'||bar.shape==='roundRect';
+      const ratio=bar.width==='thin'?0.42:bar.width==='thick'?0.82:0.65;
+      const hpct=Math.round(ratio*100);
+
+      if(isMsSym){
+        // MS記号: セルに直接シンボルを表示
+        tdG.style.position='relative';tdG.style.zIndex='3'; // 罫線(border-collapse)より前面に
+        const sym=document.createElement('div');
+        sym.style.cssText=`position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:#${fh};font-weight:bold;z-index:3;pointer-events:none;`;
+        sym.textContent=PV_MS_SYMS[bar.shape]||'◆';
+        tdG.appendChild(sym);
+      }else{
+        // バー表示
+        const barDiv=document.createElement('div');
+        const isStart=(q===bar.from),isEnd=(q===bar.to);
+        if(isDash||isSolid){
+          // 枠線バー（点線/実線）: 開始セルのみに全幅スパン要素を1つ生成（分割を防ぐ）
+          const totalBarW=(bar.to-bar.from+1)*gcW-4;
+          barDiv.style.cssText=[
+            'position:absolute','top:50%',`height:${hpct}%`,'transform:translateY(-50%)',
+            'left:2px',`width:${totalBarW}px`,
+            'background:transparent',`border:2px ${isDash?'dashed':'solid'} #${fh}`,
+            'border-radius:2px','z-index:3','pointer-events:none',
+          ].join(';');
+          tdG.style.position='relative';tdG.style.zIndex='3'; // 罫線より前面
+          tdG.appendChild(barDiv);
+        }else{
+          // 通常バー（矢印・四角・楕円等）
+          const aw=Math.round(gcW*ratio/2);
+          const arrowW=Math.round(aw*1.1);
+          let borderR;
+          if(isRound){
+            if(isStart&&isEnd)     borderR='4px';
+            else if(isStart)       borderR='4px 0 0 4px';
+            else if(isEnd)         borderR='0 4px 4px 0';
+            else                   borderR='0';
+          }else{
+            if(isStart&&isEnd)     borderR='2px';
+            else if(isStart)       borderR='2px 0 0 2px';
+            else if(isArrow&&isEnd)borderR='2px 0 0 2px';
+            else if(isEnd)         borderR='0 2px 2px 0';
+            else                   borderR='0';
+          }
+          // 矢印終端はclip-pathでホームベース型（右端を滑らかな三角形に尖らせる）
+          const isArrowEnd=isArrow&&isEnd;
+          const arrowN=aw; // 突き出し量(px)≒バー高さの半分
+          const barRight=isEnd?'2px':'0';
+          const clip=isArrowEnd?`clip-path:polygon(0 0,calc(100% - ${arrowN}px) 0,100% 50%,calc(100% - ${arrowN}px) 100%,0 100%)`:'';
+          barDiv.style.cssText=[
+            'position:absolute','top:50%',`height:${hpct}%`,`transform:translateY(-50%)`,
+            `left:${isStart?'2px':'0'}`,`right:${barRight}`,
+            `background:#${fh}`,`border-radius:${borderR}`,'border:none',
+            clip,
+            'z-index:3','pointer-events:none',
+          ].filter(Boolean).join(';');
+          tdG.style.position='relative';tdG.style.zIndex='3'; // 罫線より前面
+          tdG.appendChild(barDiv);
+        }
+
+        // バー内テキスト（別レイヤー）：開始セルに配置し、バー長に関係なく必ず表示。
+        // バーからはみ出してもよい（overflow:visible・前面・半透明白背景）。
+        if(q===bar.from&&!isMsSym){
+          const lbl=document.createElement('div');
+          lbl.className='bar-lbl';
+          lbl.style.cssText='position:absolute;top:50%;left:2px;transform:translateY(-50%);display:flex;flex-direction:column;align-items:flex-start;justify-content:center;line-height:1.25;pointer-events:none;z-index:10;white-space:nowrap;background:transparent;padding:0 2px;border-radius:2px;';
+          // 行ごとのテキスト表示チェックがOFFなら非表示
+          if(rd.showText===false)lbl.style.display='none';
+          const up=document.createElement('div');
+          up.style.cssText='font-size:8px;color:#222;font-weight:normal;white-space:nowrap;';
+          up.textContent=rd.task||'';
+          lbl.appendChild(up);
+          if(lowerText){
+            const lo=document.createElement('div');
+            lo.style.cssText='font-size:7px;color:#222;font-weight:normal;white-space:nowrap;';
+            lo.textContent=lowerText;
+            lbl.appendChild(lo);
+          }
+          tdG.style.overflow='visible';
+          tdG.style.zIndex='6'; // はみ出したテキストを後続セルのバーより前面に
+          tdG.appendChild(lbl);
+        }
+      }
+    }
+    er++;
+  });
+
+  // 大項目グループ内の行境界線を非表示（グループ最終行のみ濃い線を残す）
+  {
+    const firstRowOfLv1=new Set(lv1Groups.map(g=>g.s));
+    const lastRowOfLv1=new Set(lv1Groups.map(g=>g.e));
+    const inLv1Group=new Set();
+    lv1Groups.forEach(g=>{for(let i=g.s;i<=g.e;i++)inLv1Group.add(i);});
+    const bodyRows=Array.from(tbody.rows);
+    let dataEr=0,prevWasSpacer=false;
+    rows.forEach(rd=>{
+      if(rd.type==='spacer'){dataEr++;prevWasSpacer=true;return;}
+      const tr=bodyRows[dataEr];
+      if(tr&&inLv1Group.has(dataEr)){
+        const isGroupEnd=lastRowOfLv1.has(dataEr);
+        const isGroupStart=firstRowOfLv1.has(dataEr);
+        if(!isGroupEnd)tr.classList.add('lv1-inner');
+        if(!isGroupStart||prevWasSpacer)tr.classList.add('lv1-notop');
+        if(isGroupEnd)tr.classList.add('lv1-end');
+      }
+      prevWasSpacer=false;
+      dataEr++;
+    });
+    // テーブル最下行（スペーサーを除く最後の実データ行）にtbl-lastを付与
+    let lastDataRowIdx=-1;
+    for(let i=bodyRows.length-1;i>=0;i--){
+      if(!bodyRows[i].classList.contains('row-sp')){
+        bodyRows[i].classList.add('tbl-last');
+        lastDataRowIdx=i;
+        break;
+      }
+    }
+    // tbl-last行（最下段◆仮換地指定）の上横罫線を確実に消す
+    if(lastDataRowIdx>=0){
+      const lastTr=bodyRows[lastDataRowIdx];
+      // lv1-innerは下辺を消すため除去。lv1-notopを付与して上辺のみborder:noneにする
+      lastTr.classList.remove('lv1-inner');
+      lastTr.classList.add('lv1-notop');
+      // gcセルの上辺を直接消す（念のため）
+      lastTr.querySelectorAll('td.gc').forEach(function(td){
+        td.style.borderTop='none';
+      });
+      // 非gcセルの上辺も消す
+      lastTr.querySelectorAll('td:not(.gc)').forEach(function(td){
+        td.style.setProperty('border-top','0','important');
+      });
+    }
+    // gcセルの縦罫線はbox-shadow(inset)で描画（バーより背面・空セルでも表示）
+    {
+      bodyRows.forEach(function(tr){
+        tr.querySelectorAll('td.gc').forEach(function(td){
+          td.style.backgroundImage='none';
+          td.style.borderRight='none';
+          td.style.boxShadow='inset -1px 0 0 var(--border)';
+        });
+      });
+    }
+    // rowSpanセル: 視覚的末尾行に合わせてborder-bottomを設定
+    tbody.querySelectorAll('td[rowspan]').forEach(td=>{
+      const trIdx=Array.from(tbody.rows).indexOf(td.parentElement);
+      const lastTr=bodyRows[trIdx+td.rowSpan-1];
+      if(!lastTr)return;
+      const isLastDataRow=(Array.from(tbody.rows).indexOf(lastTr)===lastDataRowIdx);
+      if(isLastDataRow||lastTr.classList.contains('lv1-end')){
+        td.style.setProperty('border-bottom','1px solid var(--border)','important');
+      }else if(lastTr.classList.contains('lv1-inner')){
+        td.style.setProperty('border-bottom','0 hidden','important');
+      }
+    });
+  }
+
+  // ページ情報更新
+  document.getElementById('pv-page-info').textContent=
+    `${rows.filter(r=>r.type!=='spacer').length}行 / ${TQ}期 / 図形${rows.reduce((s,r)=>s+(r.bars||[]).length,0)}個`;
+}
+let pvZoom=1.5; // 現在の実効スケール係数（ドラッグ座標計算で参照）
+function setZoom(v){
+  const wrap=document.getElementById('pv-gantt-wrap');
+  const tbl=document.getElementById('pv-gantt-tbl');
+  const sc=document.getElementById('pv-scroll-wrap');
+  let vf;
+  if(v==='a3'){
+    // A3横420mm ≒ 420/25.4*96 ≒ 1587px に収めるスケール
+    const tblW=tbl.offsetWidth||1587;
+    vf=1587/tblW;
+    // 列数が少ない（年度単位など）場合に拡大しすぎないよう上限を設ける
+    vf=Math.min(vf,1.5);
+  }else{
+    vf=parseFloat(v)||1;
+  }
+  pvZoom=vf;
+  const tw=tbl.offsetWidth,th=tbl.offsetHeight;
+  wrap.style.transform=`scale(${vf})`;
+  wrap.style.transformOrigin='top left';
+  wrap.style.marginRight=Math.max(0,(vf-1)*tw)+'px';
+  sc.style.height=(th*vf+32)+'px';
+}
+
+// ===== 機能A: テキストボックス・吹き出し =====
+// E-7: 出現位置を表示領域の右端寄り・縦中央に
+function _pvInitPos(){
+  const sc=document.getElementById('pv-scroll-wrap');
+  const tbl=document.getElementById('pv-gantt-tbl');
+  const vf=pvZoom||1;
+  const viewW=sc.clientWidth;
+  const viewH=sc.clientHeight;
+  const tblScaledW=(tbl?tbl.offsetWidth:viewW)*vf;
+  const rightX=Math.min(tblScaledW-20,sc.scrollLeft+viewW-20);
+  const left=Math.round((rightX-160)/vf);
+  const top=Math.round((sc.scrollTop+viewH/2)/vf-20);
+  return{left:Math.max(10,left),top:Math.max(10,top)};
+}
+
+// E-3: contenteditable/select/button/resize上ではドラッグ開始しない
+function makeDraggable(el){
+  let sx=0,sy=0,ox=0,oy=0,on=false;
+  el.addEventListener('mousedown',function(e){
+    if(e.target.isContentEditable)return;
+    if(e.target.tagName==='SELECT')return;
+    if(e.target.tagName==='BUTTON')return;
+    if(e.target.classList.contains('box-resize'))return;
+    on=true;sx=e.clientX;sy=e.clientY;
+    ox=parseFloat(el.style.left)||0;oy=parseFloat(el.style.top)||0;
+  });
+  document.addEventListener('mousemove',function(e){
+    if(!on)return;
+    const vf=pvZoom||1;
+    el.style.left=(ox+(e.clientX-sx)/vf)+'px';
+    el.style.top=(oy+(e.clientY-sy)/vf)+'px';
+  });
+  document.addEventListener('mouseup',function(){on=false;});
+}
+
+// E-4: 右下ハンドルでリサイズ（PointerEvents方式・pvZoom補正）
+// contentEditable親内でもmousedownを奪われないよう pointer* + setPointerCapture を使う。
+// box-resize要素はこの関数内で自動生成する（呼び出し元での手動追加は不要）。
+function makeResizable(el){
+  const rz=document.createElement('div');
+  rz.className='box-resize';
+  rz.textContent='◢';
+  rz.style.cssText='position:absolute;right:1px;bottom:1px;width:16px;height:16px;'
+    +'cursor:se-resize;font-size:12px;line-height:16px;text-align:center;'
+    +'color:#999;user-select:none;pointer-events:auto;z-index:60;';
+  rz.contentEditable='false';
+  el.appendChild(rz);
+
+  let on=false,sx=0,sy=0,iw=0,ih=0;
+  rz.addEventListener('pointerdown',function(e){
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    e.preventDefault();
+    rz.setPointerCapture(e.pointerId);
+    on=true;sx=e.clientX;sy=e.clientY;
+    iw=el.offsetWidth||80;ih=el.offsetHeight||30;
+  });
+  rz.addEventListener('pointermove',function(e){
+    if(!on)return;
+    const vf=pvZoom||1;
+    el.style.width=Math.max(40,iw+(e.clientX-sx)/vf)+'px';
+    el.style.height=Math.max(24,ih+(e.clientY-sy)/vf)+'px';
+  });
+  rz.addEventListener('pointerup',function(){on=false;});
+}
+
+// E-5: クリック選択＋Delete/Backspace削除
+let selectedAnnotation=null;
+function selectAnnotation(el){
+  if(selectedAnnotation)selectedAnnotation.style.outline='';
+  selectedAnnotation=el;
+  if(el)el.style.outline='2px solid #0078d4';
+}
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Delete'&&e.key!=='Backspace')return;
+  if(!selectedAnnotation)return;
+  // contentEditable編集中・入力欄フォーカス中は削除しない
+  const active=document.activeElement;
+  if(active&&active.isContentEditable)return;
+  if(active&&(active.tagName==='INPUT'||active.tagName==='TEXTAREA'))return;
+  selectedAnnotation.remove();selectedAnnotation=null;
+  e.preventDefault();
+});
+
+// 編集モード/確定モードの管理（編集要素は内側 .annotation-text）
+let _activeAnnotation=null;
+function _annText(box){return box.querySelector('.annotation-text');}
+function _activateAnnotation(box){
+  // 前のボックスを確定状態にする
+  if(_activeAnnotation&&_activeAnnotation!==box){
+    const pt=_annText(_activeAnnotation);
+    if(pt)pt.contentEditable='false';
+    _activeAnnotation.style.outline='';
+    _activeAnnotation.style.cursor='move';
+  }
+  _activeAnnotation=box;
+  selectedAnnotation=box; // Deleteキー削除用に同期
+  const t=_annText(box);
+  if(t)t.contentEditable='true';
+  box.style.outline='2px solid #0078d4';
+  box.style.cursor='text';
+}
+function _deactivateAll(){
+  if(_activeAnnotation){
+    const t=_annText(_activeAnnotation);
+    if(t)t.contentEditable='false';
+    _activeAnnotation.style.outline='';
+    _activeAnnotation.style.cursor='move';
+    _activeAnnotation=null;
+    // selectedAnnotationは保持（確定後もDeleteキーで削除可能）
+  }
+}
+// 欄外クリックで全ボックスを確定（pv-scroll-wrapは静的要素なので起動時に1回登録）
+(function(){
+  const sc=document.getElementById('pv-scroll-wrap');
+  if(sc)sc.addEventListener('click',function(e){
+    if(!e.target.closest('.pv-textbox,.pv-callout')){
+      _deactivateAll();
+      // 欄外クリックで選択も解除（青枠を消す）
+      if(selectedAnnotation){selectedAnnotation.style.outline='';selectedAnnotation=null;}
+    }
+  });
+})();
+
+// フォントサイズ選択（右上・▼のみ表示）。txtを参照してサイズ変更
+function _makeFontSel(txt){
+  const sel=document.createElement('select');
+  sel.className='annotation-fontsize';
+  sel.style.cssText='position:absolute;top:2px;right:2px;width:22px;opacity:0.5;'
+    +'font-size:9px;cursor:pointer;border:none;background:transparent;z-index:5;';
+  ['6','7','8','9','10','11','12','14'].forEach(s=>{
+    const opt=document.createElement('option');opt.value=s+'px';opt.textContent=s;
+    if(s==='10')opt.selected=true;sel.appendChild(opt);
+  });
+  sel.addEventListener('change',function(e){e.stopPropagation();txt.style.fontSize=this.value;});
+  sel.addEventListener('mousedown',e=>e.stopPropagation());
+  return sel;
+}
+
+// E-1: テキストボックス
+function addTextBox(){
+  const wrap=document.getElementById('pv-gantt-wrap');
+  if(!wrap){alert('先にプレビューを開いてください');return;}
+  const pos=_pvInitPos();
+  const box=document.createElement('div');
+  box.className='pv-textbox';
+  box.style.cssText=`position:absolute;left:${pos.left}px;top:${pos.top}px;`
+    +'min-width:40px;min-height:24px;border:1.5px solid #555;background:#fff;'
+    +'border-radius:3px;z-index:30;cursor:move;box-sizing:border-box;';
+  const txt=document.createElement('div');
+  txt.className='annotation-text';
+  txt.contentEditable='true';
+  txt.style.cssText='padding:4px 6px;min-height:14px;font-size:10px;'
+    +'outline:none;cursor:text;word-break:break-all;pointer-events:auto;';
+  // プレースホルダー（空のときグレーで表示・フォーカスで消去・空のままblurで再表示）
+  txt.dataset.placeholder='テキストを入力';
+  const _updatePh=function(){
+    if(!txt.innerText.trim()){
+      txt.style.color='#bbb';
+      if(!txt.dataset.phActive){txt.dataset.phActive='1';txt.textContent=txt.dataset.placeholder;}
+    }else{ txt.style.color='';delete txt.dataset.phActive; }
+  };
+  txt.addEventListener('focus',function(){
+    if(txt.dataset.phActive){txt.textContent='';txt.style.color='';delete txt.dataset.phActive;}
+  });
+  txt.addEventListener('blur',_updatePh);
+  const sel=_makeFontSel(txt);
+  // シングルクリックで選択（青枠・Delete削除可）／ダブルクリックで編集モード
+  box.addEventListener('mousedown',function(e){
+    if(e.target.classList&&(e.target.classList.contains('box-resize')||e.target.classList.contains('annotation-fontsize')))return;
+    selectAnnotation(box);
+  });
+  box.addEventListener('dblclick',function(e){
+    if(e.target.classList&&(e.target.classList.contains('box-resize')||e.target.classList.contains('annotation-fontsize')))return;
+    e.stopPropagation();
+    _activateAnnotation(box);
+    setTimeout(function(){txt.focus();},0);
+  });
+  box.appendChild(sel);box.appendChild(txt);
+  makeDraggable(box);makeResizable(box);
+  wrap.appendChild(box);
+  _updatePh();
+  _activateAnnotation(box);
+  setTimeout(function(){txt.focus();},0);
+}
+
+// E-2: 吹き出し（しっぽ付き）
+function addCallout(){
+  const wrap=document.getElementById('pv-gantt-wrap');
+  if(!wrap){alert('先にプレビューを開いてください');return;}
+  const pos=_pvInitPos();
+  const box=document.createElement('div');
+  box.className='pv-callout';
+  box.style.cssText=`position:absolute;left:${pos.left}px;top:${pos.top}px;`
+    +'min-width:40px;min-height:24px;border:1.5px solid #555;background:#fff;'
+    +'border-radius:6px;z-index:30;cursor:move;box-sizing:border-box;box-shadow:2px 2px 6px rgba(0,0,0,0.15);';
+  const txt=document.createElement('div');
+  txt.className='annotation-text';
+  txt.contentEditable='true';
+  txt.style.cssText='padding:4px 6px;min-height:14px;font-size:10px;'
+    +'outline:none;cursor:text;word-break:break-all;pointer-events:auto;';
+  // プレースホルダー（空のときグレーで表示・フォーカスで消去・空のままblurで再表示）
+  txt.dataset.placeholder='テキストを入力';
+  const _updatePh=function(){
+    if(!txt.innerText.trim()){
+      txt.style.color='#bbb';
+      if(!txt.dataset.phActive){txt.dataset.phActive='1';txt.textContent=txt.dataset.placeholder;}
+    }else{ txt.style.color='';delete txt.dataset.phActive; }
+  };
+  txt.addEventListener('focus',function(){
+    if(txt.dataset.phActive){txt.textContent='';txt.style.color='';delete txt.dataset.phActive;}
+  });
+  txt.addEventListener('blur',_updatePh);
+  const sel=_makeFontSel(txt);
+  // しっぽ（▼）- ドラッグで左右移動可能
+  const tail=document.createElement('div');
+  tail.setAttribute('contenteditable','false');
+  tail.style.cssText='position:absolute;bottom:-10px;left:20px;width:0;height:0;'
+    +'border-left:8px solid transparent;border-right:8px solid transparent;'
+    +'border-top:10px solid #555;pointer-events:auto;cursor:ew-resize;z-index:5;';
+  tail.title='ドラッグで位置を変更';
+
+  // 足のドラッグ（左右移動のみ）
+  let tailOn=false, tailSx=0, tailOx=0;
+  tail.addEventListener('pointerdown',function(e){
+    e.stopPropagation();e.preventDefault();
+    tail.setPointerCapture(e.pointerId);
+    tailOn=true;tailSx=e.clientX;tailOx=parseInt(tail.style.left)||20;
+  });
+  tail.addEventListener('pointermove',function(e){
+    if(!tailOn)return;
+    const vf=pvZoom||1;
+    const newLeft=Math.max(4, Math.min(
+      box.offsetWidth-20,
+      tailOx+(e.clientX-tailSx)/vf
+    ));
+    tail.style.left=newLeft+'px';
+  });
+  tail.addEventListener('pointerup',function(){tailOn=false;});
+  // シングルクリックで選択（青枠・Delete削除可）／ダブルクリックで編集モード
+  box.addEventListener('mousedown',function(e){
+    if(e.target.classList&&(e.target.classList.contains('box-resize')||e.target.classList.contains('annotation-fontsize')))return;
+    selectAnnotation(box);
+  });
+  box.addEventListener('dblclick',function(e){
+    if(e.target.classList&&(e.target.classList.contains('box-resize')||e.target.classList.contains('annotation-fontsize')))return;
+    e.stopPropagation();
+    _activateAnnotation(box);
+    setTimeout(function(){txt.focus();},0);
+  });
+  box.appendChild(sel);box.appendChild(txt);box.appendChild(tail);
+  makeDraggable(box);makeResizable(box);
+  wrap.appendChild(box);
+  _updatePh();
+  _activateAnnotation(box);
+  setTimeout(function(){txt.focus();},0);
+}
+
+// ===== 機能B: 線・コネクタパネル =====
+const _SVGNS='http://www.w3.org/2000/svg';
+let connectorDrawMode=false;
+let connectorStartX=0,connectorStartY=0,connectorPreview=null;
+let _connEventsBound=false;
+// 鍵型（elbow）ポリライン用: クリックで折れ点追加→ダブルクリックで確定
+let _elbowPoints=[];
+let _elbowPreview=null;
+function _connShapeVal(){
+  const s=document.querySelector('#connector-panel input[name="conn-shape"]:checked');
+  return s?s.value:'straight';
+}
+
+function toggleConnectorPanel(){
+  const p=document.getElementById('connector-panel');
+  if(!p)return;
+  const open=getComputedStyle(p).display!=='none';
+  p.style.display=open?'none':'block';
+  if(!open)makePanelDraggable(p);
+}
+
+// F-2: パネルをタイトル行掴みで移動
+function makePanelDraggable(panel){
+  const handle=panel.querySelector('.panel-title');
+  if(!handle||panel._dragInit)return;
+  panel._dragInit=true;
+  let on=false,sx=0,sy=0,ox=0,oy=0;
+  handle.addEventListener('mousedown',function(e){
+    on=true;sx=e.clientX;sy=e.clientY;
+    const r=panel.getBoundingClientRect();
+    panel.style.left=r.left+'px';panel.style.top=r.top+'px';panel.style.right='auto';
+    ox=r.left;oy=r.top;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove',function(e){
+    if(!on)return;
+    panel.style.left=(ox+e.clientX-sx)+'px';
+    panel.style.top=(oy+e.clientY-sy)+'px';
+  });
+  document.addEventListener('mouseup',function(){on=false;});
+}
+
+// F-3: SVGオーバーレイ＋マーカー定義
+function ensureConnectorSvg(){
+  const wrap=document.getElementById('pv-gantt-wrap');
+  const tbl=document.getElementById('pv-gantt-tbl');
+  if(!wrap||!tbl)return null;
+  let svg=document.getElementById('pv-connector-svg');
+  if(!svg){
+    svg=document.createElementNS(_SVGNS,'svg');
+    svg.id='pv-connector-svg';
+    svg.style.cssText='position:absolute;top:0;left:0;z-index:20;overflow:visible;';
+    const defs=document.createElementNS(_SVGNS,'defs');
+    defs.innerHTML=
+      '<marker id="arrow-start" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto-start-reverse"><path d="M0,0 L6,3 L0,6 Z" fill="#333"/></marker>'
+     +'<marker id="arrow-end" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#333"/></marker>'
+     +'<marker id="circle-start" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle cx="3" cy="3" r="2.5" fill="#333"/></marker>'
+     +'<marker id="circle-end" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle cx="3" cy="3" r="2.5" fill="#333"/></marker>'
+     +'<marker id="square-start" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><rect x="0.5" y="0.5" width="5" height="5" fill="#333"/></marker>'
+     +'<marker id="square-end" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><rect x="0.5" y="0.5" width="5" height="5" fill="#333"/></marker>';
+    svg.appendChild(defs);
+    wrap.appendChild(svg);
+  }
+  svg.setAttribute('width',tbl.offsetWidth);
+  svg.setAttribute('height',tbl.offsetHeight);
+  svg.style.width=tbl.offsetWidth+'px';
+  svg.style.height=tbl.offsetHeight+'px';
+  _bindConnectorEvents();
+  return svg;
+}
+function _bindConnectorEvents(){
+  if(_connEventsBound)return;
+  const wrap=document.getElementById('pv-gantt-wrap');
+  if(!wrap)return;
+  wrap.addEventListener('mousedown',onConnectorMouseDown);
+  document.addEventListener('mousemove',onConnectorMouseMove);
+  document.addEventListener('mouseup',onConnectorMouseUp);
+  document.addEventListener('dblclick',onConnectorDblClick);
+  document.addEventListener('keydown',onConnectorKeyDown);
+  _connEventsBound=true;
+}
+
+function toggleConnectorDraw(){
+  connectorDrawMode=!connectorDrawMode;
+  ensureConnectorSvg();
+  const wrap=document.getElementById('pv-gantt-wrap');
+  if(wrap)wrap.style.cursor=connectorDrawMode?'crosshair':'';
+  const btn=document.getElementById('connector-draw-btn');
+  if(btn){
+    btn.textContent=connectorDrawMode?'✏️ ON':'✏️ OFF';
+    btn.style.background=connectorDrawMode?'#dc3545':'#28a745';
+  }
+}
+
+function _connPt(e){
+  const svg=document.getElementById('pv-connector-svg');
+  const r=svg.getBoundingClientRect();
+  const vf=pvZoom||1;
+  return{x:(e.clientX-r.left)/vf,y:(e.clientY-r.top)/vf};
+}
+function onConnectorMouseDown(e){
+  if(!connectorDrawMode)return;
+  if(e.target&&e.target.closest&&e.target.closest('.pv-textbox,.pv-callout'))return;
+  const svg=document.getElementById('pv-connector-svg');
+  if(!svg)return;
+  const p=_connPt(e);
+  // 鍵型: クリックで折れ点を追加していくポリライン方式
+  if(_connShapeVal()==='elbow'){
+    if(_elbowPoints.length===0){
+      _elbowPoints=[p];
+      if(_elbowPreview){_elbowPreview.remove();_elbowPreview=null;}
+      _elbowPreview=document.createElementNS(_SVGNS,'polyline');
+      _elbowPreview.setAttribute('fill','none');
+      _elbowPreview.setAttribute('stroke','#666');
+      _elbowPreview.setAttribute('stroke-dasharray','4,2');
+      _elbowPreview.setAttribute('stroke-width','1');
+      _elbowPreview.style.pointerEvents='none';
+      svg.appendChild(_elbowPreview);
+    }else{
+      _elbowPoints.push(p);
+    }
+    e.preventDefault();
+    return;
+  }
+  e.preventDefault();
+  connectorStartX=p.x;connectorStartY=p.y;
+  connectorPreview=document.createElementNS(_SVGNS,'line');
+  connectorPreview.setAttribute('x1',p.x);connectorPreview.setAttribute('y1',p.y);
+  connectorPreview.setAttribute('x2',p.x);connectorPreview.setAttribute('y2',p.y);
+  connectorPreview.setAttribute('stroke','#333');connectorPreview.setAttribute('stroke-width','1');
+  connectorPreview.setAttribute('stroke-dasharray','4,2');connectorPreview.setAttribute('opacity','0.6');
+  connectorPreview.style.pointerEvents='none';
+  svg.appendChild(connectorPreview);
+}
+function onConnectorMouseMove(e){
+  if(!connectorDrawMode)return;
+  // 鍵型ポリライン作図中: 現在のマウス位置を仮の終点としてプレビュー更新
+  if(_elbowPoints.length>0&&_elbowPreview){
+    const p=_connPt(e);
+    const pts=[..._elbowPoints,p];
+    _elbowPreview.setAttribute('points',pts.map(q=>q.x+','+q.y).join(' '));
+    return;
+  }
+  if(!connectorPreview)return;
+  const p=_connPt(e);
+  connectorPreview.setAttribute('x2',p.x);connectorPreview.setAttribute('y2',p.y);
+}
+// F-4: 確定線（直線/直角鍵型・線種・太さ・端部マーカー）
+function onConnectorMouseUp(e){
+  if(!connectorDrawMode)return;
+  if(_connShapeVal()==='elbow')return; // 鍵型はダブルクリックで確定するためここでは処理しない
+  if(!connectorPreview)return;
+  const svg=document.getElementById('pv-connector-svg');
+  const p=_connPt(e);const x2=p.x,y2=p.y;
+  connectorPreview.remove();connectorPreview=null;
+  if(Math.hypot(x2-connectorStartX,y2-connectorStartY)<5)return;
+  const shapeSel=document.querySelector('#connector-panel input[name="conn-shape"]:checked');
+  const shapeVal=shapeSel?shapeSel.value:'straight';
+  const dashSel=document.querySelector('#connector-panel input[name="conn-style"]:checked');
+  const dashVal=dashSel?dashSel.value:'solid';
+  let el;
+  if(shapeVal==='elbow'){
+    const midX=(connectorStartX+x2)/2;
+    el=document.createElementNS(_SVGNS,'path');
+    el.setAttribute('d',`M ${connectorStartX} ${connectorStartY} L ${midX} ${connectorStartY} L ${midX} ${y2} L ${x2} ${y2}`);
+    el.setAttribute('fill','none');
+  }else{
+    el=document.createElementNS(_SVGNS,'line');
+    el.setAttribute('x1',connectorStartX);el.setAttribute('y1',connectorStartY);
+    el.setAttribute('x2',x2);el.setAttribute('y2',y2);
+  }
+  el.setAttribute('stroke','#333');
+  if(dashVal==='dashed')el.setAttribute('stroke-dasharray','6,3');
+  else if(dashVal==='dotted')el.setAttribute('stroke-dasharray','2,3');
+  const wSel=document.getElementById('connector-width-sel');
+  el.setAttribute('stroke-width',String(wSel?parseFloat(wSel.value)||0.75:0.75));
+  const startSel=document.getElementById('conn-start-sel');
+  const endSel=document.getElementById('conn-end-sel');
+  const startVal=startSel?startSel.value:'none';
+  const endVal=endSel?endSel.value:'arrow';
+  if(startVal!=='none')el.setAttribute('marker-start',`url(#${startVal}-start)`);
+  if(endVal!=='none')el.setAttribute('marker-end',`url(#${endVal}-end)`);
+  el.setAttribute('pointer-events','none'); // 見た目の線はイベントなし
+  // 透明な太い(12px)ヒットエリアを重ねて当たり判定を広げる（見た目は変わらない）
+  let hit;
+  if(shapeVal==='elbow'){
+    hit=document.createElementNS(_SVGNS,'path');
+    hit.setAttribute('d',el.getAttribute('d'));
+    hit.setAttribute('fill','none');
+  }else{
+    hit=document.createElementNS(_SVGNS,'line');
+    hit.setAttribute('x1',el.getAttribute('x1'));
+    hit.setAttribute('y1',el.getAttribute('y1'));
+    hit.setAttribute('x2',el.getAttribute('x2'));
+    hit.setAttribute('y2',el.getAttribute('y2'));
+  }
+  hit.setAttribute('stroke','transparent');
+  hit.setAttribute('stroke-width','12');
+  hit.setAttribute('pointer-events','stroke');
+  hit.style.cursor='pointer';
+  // ダブルクリックで線・ヒットエリアをまとめて削除
+  const g=document.createElementNS(_SVGNS,'g');
+  hit.addEventListener('dblclick',function(ev){ev.stopPropagation();g.remove();});
+  g.appendChild(el);g.appendChild(hit);
+  svg.appendChild(g);
+}
+
+// F-4b: 鍵型ポリラインをダブルクリックで確定
+function onConnectorDblClick(e){
+  if(!connectorDrawMode)return;
+  if(_connShapeVal()!=='elbow'||_elbowPoints.length<2)return;
+  const svg=document.getElementById('pv-connector-svg');
+  if(!svg)return;
+  if(_elbowPreview){_elbowPreview.remove();_elbowPreview=null;}
+
+  const dashSel=document.querySelector('#connector-panel input[name="conn-style"]:checked');
+  const dashVal=dashSel?dashSel.value:'solid';
+  const wSel=document.getElementById('connector-width-sel');
+  const w=wSel?parseFloat(wSel.value)||0.75:0.75;
+  const startSel=document.getElementById('conn-start-sel');
+  const endSel=document.getElementById('conn-end-sel');
+  const startVal=startSel?startSel.value:'none';
+  const endVal=endSel?endSel.value:'arrow';
+  const ptsStr=_elbowPoints.map(p=>p.x+','+p.y).join(' ');
+
+  const pl=document.createElementNS(_SVGNS,'polyline');
+  pl.setAttribute('fill','none');
+  pl.setAttribute('stroke','#333');
+  pl.setAttribute('stroke-width',String(w));
+  pl.setAttribute('points',ptsStr);
+  if(dashVal==='dashed')pl.setAttribute('stroke-dasharray','6,3');
+  else if(dashVal==='dotted')pl.setAttribute('stroke-dasharray','2,3');
+  if(startVal!=='none')pl.setAttribute('marker-start',`url(#${startVal}-start)`);
+  if(endVal!=='none')pl.setAttribute('marker-end',`url(#${endVal}-end)`);
+  pl.setAttribute('pointer-events','none');
+
+  const hit=document.createElementNS(_SVGNS,'polyline');
+  hit.setAttribute('fill','none');
+  hit.setAttribute('stroke','transparent');
+  hit.setAttribute('stroke-width','12');
+  hit.setAttribute('points',ptsStr);
+  hit.setAttribute('pointer-events','stroke');
+  hit.style.cursor='pointer';
+
+  const g=document.createElementNS(_SVGNS,'g');
+  hit.addEventListener('dblclick',function(ev){ev.stopPropagation();g.remove();});
+  g.appendChild(pl);g.appendChild(hit);
+  svg.appendChild(g);
+  _elbowPoints=[];
+  e.preventDefault();
+}
+
+// 鍵型作図中にESCでキャンセル
+function onConnectorKeyDown(e){
+  if(e.key==='Escape'&&connectorDrawMode){
+    if(_elbowPreview){_elbowPreview.remove();_elbowPreview=null;}
+    _elbowPoints=[];
+    if(connectorPreview){connectorPreview.remove();connectorPreview=null;}
+  }
+}
+
+</script>
+</body>
+</html>
