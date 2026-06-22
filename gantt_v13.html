@@ -428,6 +428,22 @@ select.tbtn{padding:4px 8px;width:auto;}
     -webkit-print-color-adjust:exact!important;
     print-color-adjust:exact!important;
   }
+
+  #print-connector-svg{
+    position:absolute !important;
+    top:0 !important;
+    left:0 !important;
+    overflow:visible !important;
+  }
+  #print-connector-svg marker,
+  #print-connector-svg path,
+  #print-connector-svg line,
+  #print-connector-svg polyline,
+  #print-connector-svg circle,
+  #print-connector-svg rect{
+    -webkit-print-color-adjust:exact !important;
+    print-color-adjust:exact !important;
+  }
 }
 
 /* ズーム */
@@ -1713,36 +1729,68 @@ function printPreview(){
     const BDR='1px solid #e8e8e8';
 
     tr.querySelectorAll('td.gc').forEach(function(td){
-      // まず全てリセット
+      // まず全リセット
       td.style.borderTop='none';
       td.style.borderBottom='none';
 
       if(isLast){
-        // 最下段: 下のみ
+        // 最下段: 下辺のみ
         td.style.borderBottom=BDR;
       }else if(inner&&notop){
         // 中間行: 上下なし
-      }else if(inner){
-        // グループ内先頭以外・末尾以外: 上のみ
+      }else if(inner&&!notop){
+        // グループ内先頭行: 上辺のみ
         td.style.borderTop=BDR;
       }else if(notop||isEnd){
-        // グループ末尾・先頭以外: 下のみ
+        // グループ末尾・先頭以外: 下辺のみ
         td.style.borderBottom=BDR;
       }else{
-        // グループ外・単独行: 下のみ（上は前行の下辺に任せる）
+        // 単独行・グループ外: 下辺のみ（上辺は前行の下辺に任せる）
         td.style.borderBottom=BDR;
-        // ★ border-topは付けない（前行のborder-bottomと重複するため）
+      }
+    });
+
+    // 非gcセルの横線制御
+    tr.querySelectorAll('td:not(.gc)').forEach(function(td){
+      if(inner&&notop){
+        td.style.setProperty('border-top','none','important');
+        td.style.setProperty('border-bottom','none','important');
+      }else if(inner){
+        td.style.setProperty('border-bottom','none','important');
+      }else if(notop){
+        td.style.setProperty('border-top','none','important');
       }
     });
   });
 
   root.appendChild(tblClone);
 
-  // SVGコネクタをクローン
+  // SVGコネクタをクローン（マーカーIDを一意にする）
   const svg=document.getElementById('pv-connector-svg');
   if(svg){
     const svgClone=svg.cloneNode(true);
-    svgClone.style.cssText='position:absolute;top:0;left:0;pointer-events:none;';
+    svgClone.id='print-connector-svg';
+    svgClone.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;';
+
+    // クローン内のマーカーIDをprint-用に変更（重複回避）
+    svgClone.querySelectorAll('marker').forEach(function(mk){
+      const oldId=mk.getAttribute('id');
+      const newId='print-'+oldId;
+      mk.setAttribute('id',newId);
+      // このマーカーを参照しているlineやpathのmarker属性も更新
+      svgClone.querySelectorAll('[marker-start="url(#'+oldId+')"]').forEach(function(el){
+        el.setAttribute('marker-start','url(#'+newId+')');
+      });
+      svgClone.querySelectorAll('[marker-end="url(#'+oldId+')"]').forEach(function(el){
+        el.setAttribute('marker-end','url(#'+newId+')');
+      });
+    });
+
+    // SVG内の全要素にprint-color-adjustを設定
+    svgClone.setAttribute('style',
+      svgClone.getAttribute('style')+';-webkit-print-color-adjust:exact;print-color-adjust:exact;');
+
+    root.style.position='relative';
     root.appendChild(svgClone);
   }
 
